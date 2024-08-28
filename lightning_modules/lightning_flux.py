@@ -64,12 +64,6 @@ class FluxLightning(L.LightningModule):
         guidance: torch.Tensor = None,
         **kwargs,
     ):
-        print(latents.shape, latents.device)
-        print(pooled_prompt_embeds.shape, pooled_prompt_embeds.device)
-        print(prompt_embeds.shape, prompt_embeds.device)
-        print(text_ids.shape, text_ids.device)
-        print(latent_image_ids.shape, latent_image_ids.device)
-        print(guidance.shape, guidance.device)
         noise_pred = self.denoiser(
             hidden_states=latents,
             timestep=timestep,
@@ -95,7 +89,8 @@ class FluxLightning(L.LightningModule):
         mean_loss = loss.mean()
         steps = [item["step"] for item in metadata]
         log = {f"Step {step} loss": step_loss for step, step_loss in zip(steps, loss)}
-        self.log(log, on_step=True, on_epoch=True, prog_bar=True)
+        self.log(log, on_step=True, on_epoch=True)
+        self.log("Mean loss", mean_loss, on_step=True, on_epoch=True)
         return mean_loss
 
     def configure_optimizers(self):
