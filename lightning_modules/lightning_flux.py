@@ -4,7 +4,7 @@ import torch
 import schedulefree
 
 
-class FluxLightning(L.Module):
+class FluxLightning(L.LightningModule):
     def __init__(
         self,
         denoiser_pretrained_path: str,
