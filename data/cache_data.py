@@ -59,7 +59,7 @@ class CacheFlux:
         )
         latents = latents.to(self.device)
         print(latents.shape)
-        latents = self.pipeline.vae.encode(latents).latent_dist
+        latents = self.pipeline.vae.encode(latents).latent_dist.sample()
         print(latents.shape)
         latents = (
             latents - self.pipeline.vae.config.shift_factor
