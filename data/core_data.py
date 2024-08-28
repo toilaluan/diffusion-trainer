@@ -88,7 +88,6 @@ class CoreCachedDataset(Dataset):
         feeds["latents"] = noised_latent
         step = int(sigma * self.max_step)
         target = noise - latent
-
         metadata = {
             "step": step,
             "sigma": sigma,
