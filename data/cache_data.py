@@ -12,7 +12,7 @@ class CacheFlux:
         self,
         pretrained_path: str = "black-forest-labs/FLUX.1-dev",
         save_dir: str = "data/cache",
-        torch_dtype: torch.dtype = torch.bfloat16,
+        torch_dtype: torch.dtype = torch.float32,
     ):
         self.save_dir = save_dir
         self.guidance_scale = 3.5
@@ -31,6 +31,7 @@ class CacheFlux:
         self.torch_dtype = torch_dtype
         os.makedirs(save_dir, exist_ok=True)
 
+    @torch.no_grad()
     def __call__(self, image: Image.Image, prompt: str, filename: str):
         height, width = image.size
         (
@@ -77,12 +78,12 @@ class CacheFlux:
         )
 
         feeds = {
-            "latents": latents.to(self.torch_dtype),
-            "pooled_prompt_embeds": pooled_prompt_embeds.to(self.torch_dtype),
-            "prompt_embeds": prompt_embeds.to(self.torch_dtype),
-            "text_ids": text_ids.to(self.torch_dtype),
-            "latent_image_ids": latent_image_ids.to(self.torch_dtype),
-            "guidance": guidance.to(self.torch_dtype),
+            "latents": latents.to(self.torch_dtype).cpu(),
+            "pooled_prompt_embeds": pooled_prompt_embeds.to(self.torch_dtype).cpu(),
+            "prompt_embeds": prompt_embeds.to(self.torch_dtype).cpu(),
+            "text_ids": text_ids.to(self.torch_dtype).cpu(),
+            "latent_image_ids": latent_image_ids.to(self.torch_dtype).cpu(),
+            "guidance": guidance.to(self.torch_dtype).cpu(),
         }
 
         torch.save(feeds, os.path.join(self.save_dir, f"{filename}.pt"))
