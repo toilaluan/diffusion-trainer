@@ -33,8 +33,6 @@ class CacheFlux:
         ) = self.pipeline.encode_prompt(
             prompt=prompt,
             prompt_2=prompt,
-            prompt_embeds=prompt_embeds,
-            pooled_prompt_embeds=pooled_prompt_embeds,
             device=self.device,
             num_images_per_prompt=1,
             max_sequence_length=256,
