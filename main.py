@@ -49,7 +49,7 @@ def parse_args():
     parser.add_argument(
         "--accumulate_grad_batches", type=int, default=1, help="Accumulate grad batches"
     )
-    parser.add_argument("--strategy", default="ddp", help="Strategy")
+    parser.add_argument("--strategy", default="auto", help="Strategy")
     parser.add_argument("--devices", default=1)
 
     return parser.parse_args()
@@ -69,7 +69,7 @@ model.to("cuda")
 cached_dataset = CoreCachedDataset(cached_folder="debug/test_cache")
 
 train_dataloader = torch.utils.data.DataLoader(
-    cached_dataset, batch_size=2, shuffle=True, collate_fn=collate_fn
+    cached_dataset, batch_size=args.batch_size, shuffle=True, collate_fn=collate_fn
 )
 
 trainer = pl.Trainer(
