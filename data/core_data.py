@@ -85,7 +85,7 @@ class CoreCachedDataset(Dataset):
         latent = feeds["latents"]
         dtype = latent.dtype
         noised_latent, sigma = self.add_noise(latent, dtype)
-        feeds["timestep"] = torch.Tensor([sigma]).to(dtype)
+        feeds["timestep"] = torch.Tensor([sigma]).to(dtype).to("cuda")
         feeds["latents"] = noised_latent
         step = int(sigma * self.max_step)
         target = latent
