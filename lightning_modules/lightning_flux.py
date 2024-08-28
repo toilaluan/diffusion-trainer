@@ -23,15 +23,33 @@ class FluxLightning(L.LightningModule):
             torch_dtype=self.torch_dtype,
             subfolder="transformer",
         )
+        self.apply_lora()
+        self.print_trainable_parameters(self.denoiser)
         self.denoiser.to("cuda")
+
+    @staticmethod
+    def print_trainable_parameters(model):
+        """
+        Prints the number of trainable parameters in the model.
+        """
+        trainable_params = 0
+        all_param = 0
+        for _, param in model.named_parameters():
+            all_param += param.numel()
+            if param.requires_grad:
+                trainable_params += param.numel()
+        print(
+            f"trainable params: {trainable_params} || all params: {all_param} || trainable%: {100 * trainable_params / all_param}"
+        )
 
     def apply_lora(self):
         transformer_lora_config = LoraConfig(
-            r=args.rank,
-            lora_alpha=args.rank,
+            r=32,
+            lora_alpha=32,
             init_lora_weights="gaussian",
             target_modules=["to_k", "to_q", "to_v", "to_out.0"],
         )
+        self.denoiser.add_adapter(transformer_lora_config)
 
     def forward(
         self,
@@ -43,7 +61,7 @@ class FluxLightning(L.LightningModule):
         latent_image_ids: torch.Tensor = None,
         joint_attention_kwargs: dict = None,
         guidance: torch.Tensor = None,
-        **kwargs
+        **kwargs,
     ):
         print(latents.shape, latents.device)
         print(pooled_prompt_embeds.shape, pooled_prompt_embeds.device)
