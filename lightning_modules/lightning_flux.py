@@ -25,7 +25,7 @@ class FluxLightning(L.LightningModule):
             denoiser_pretrained_path,
             subfolder="transformer",
         )
-        quantize(self.denoiser, qint4)
+        quantize(self.denoiser, weights=qint4)
         freeze(self.denoiser)
         self.apply_lora()
         self.denoiser.enable_gradient_checkpointing()
