@@ -64,6 +64,9 @@ class FluxLightning(L.LightningModule):
         guidance: torch.Tensor = None,
         **kwargs,
     ):
+        print(latents.shape)
+        print(timestep.shape)
+        print(guidance.shape)
         noise_pred = self.denoiser(
             hidden_states=latents,
             timestep=timestep,
