@@ -19,7 +19,7 @@ def flush():
 
 metadata_file = "dataset/itay_test/metadata.json"
 root_folder = "dataset/itay_test/images"
-torch_dtype = torch.float16
+torch_dtype = torch.bfloat16
 
 dataset = CoreDataset(root_folder=root_folder, metadata_file=metadata_file)
 pbar = tqdm(desc=f"Caching root folder: {root_folder}", total=len(dataset))

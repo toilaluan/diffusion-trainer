@@ -44,7 +44,7 @@ def parse_args():
         "--log_every_n_steps", type=int, default=10, help="Log every n steps"
     )
     parser.add_argument("--gpus", type=int, default=1, help="Number of GPUs")
-    parser.add_argument("--precision", default="32-true", help="Precision")
+    parser.add_argument("--precision", default="32", help="Precision")
     parser.add_argument("--accelerator", default="gpu", help="Accelerator")
     parser.add_argument(
         "--accumulate_grad_batches", type=int, default=1, help="Accumulate grad batches"

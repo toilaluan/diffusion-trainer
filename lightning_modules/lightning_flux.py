@@ -15,7 +15,7 @@ class FluxLightning(L.LightningModule):
         denoiser_pretrained_path: str,
         learning_rate: float = 1e-4,
         weight_decay: float = 1e-4,
-        torch_dtype: torch.dtype = torch.float16,
+        torch_dtype: torch.dtype = torch.bfloat16,
     ):
         super().__init__()
         self.learning_rate = learning_rate

@@ -12,7 +12,7 @@ class CacheFlux:
         self,
         pretrained_path: str = "black-forest-labs/FLUX.1-dev",
         save_dir: str = "data/cache",
-        torch_dtype: torch.dtype = torch.float16,
+        torch_dtype: torch.dtype = torch.bfloat16,
     ):
         self.save_dir = save_dir
         self.guidance_scale = 3.5
