@@ -22,7 +22,6 @@ class FluxLightning(L.LightningModule):
         self,
         latents: torch.Tensor = None,
         timestep: int = None,
-        guidance: float = None,
         pooled_prompt_embeds: torch.Tensor = None,
         prompt_embeds: torch.Tensor = None,
         text_ids: torch.Tensor = None,
@@ -30,10 +29,9 @@ class FluxLightning(L.LightningModule):
         joint_attention_kwargs: dict = None,
         **kwargs
     ):
-        noise_pred = self.transformer(
+        noise_pred = self.denoiser(
             hidden_states=latents,
             timestep=timestep / 1000,
-            guidance=guidance,
             pooled_projections=pooled_prompt_embeds,
             encoder_hidden_states=prompt_embeds,
             txt_ids=text_ids,
