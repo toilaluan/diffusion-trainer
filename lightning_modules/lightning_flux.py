@@ -5,6 +5,7 @@ import schedulefree
 from peft import LoraConfig, set_peft_model_state_dict
 from peft.utils import get_peft_model_state_dict
 import math
+from optimum.quanto import freeze, qfloat8, quantize
 
 
 class FluxLightning(L.LightningModule):
@@ -24,6 +25,8 @@ class FluxLightning(L.LightningModule):
             torch_dtype=self.torch_dtype,
             subfolder="transformer",
         )
+        quantize(self.denoiser, qfloat8)
+        freeze(self.denoiser)
         self.apply_lora()
         self.print_trainable_parameters(self.denoiser)
         self.denoiser.to("cuda")

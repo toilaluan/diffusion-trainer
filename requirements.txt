@@ -7,3 +7,4 @@ protobuf
 schedulefree
 accelerate
 peft
+optimum-quanto
