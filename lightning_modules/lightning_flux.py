@@ -31,7 +31,7 @@ class FluxLightning(L.LightningModule):
     ):
         noise_pred = self.denoiser(
             hidden_states=latents,
-            timestep=timestep / 1000,
+            timestep=timestep,
             pooled_projections=pooled_prompt_embeds,
             encoder_hidden_states=prompt_embeds,
             txt_ids=text_ids,
