@@ -15,6 +15,7 @@ class CacheFlux:
         torch_dtype: torch.dtype = torch.float16,
     ):
         self.save_dir = save_dir
+        self.guidance_scale = 3.5
         self.pretrained_path = pretrained_path
         self.pipeline = diffusers.FluxPipeline.from_pretrained(
             pretrained_path, transformer=None, torch_dtype=torch_dtype
@@ -71,6 +72,7 @@ class CacheFlux:
             height=latents.shape[2],
             width=latents.shape[3],
         )
+        guidance = torch.tensor([self.guidance_scale]).to(self.torch_dtype)
 
         feeds = {
             "latents": latents.to(self.torch_dtype),
@@ -78,6 +80,7 @@ class CacheFlux:
             "prompt_embeds": prompt_embeds.to(self.torch_dtype),
             "text_ids": text_ids.to(self.torch_dtype),
             "latent_image_ids": latent_image_ids.to(self.torch_dtype),
+            "guidance": guidance.to(self.torch_dtype),
         }
 
         torch.save(feeds, os.path.join(self.save_dir, f"{filename}.pt"))

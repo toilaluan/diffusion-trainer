@@ -31,6 +31,7 @@ class FluxLightning(L.LightningModule):
         text_ids: torch.Tensor = None,
         latent_image_ids: torch.Tensor = None,
         joint_attention_kwargs: dict = None,
+        guidance: torch.Tensor = None,
         **kwargs
     ):
         print(latents.shape)
@@ -46,6 +47,7 @@ class FluxLightning(L.LightningModule):
             txt_ids=text_ids,
             img_ids=latent_image_ids,
             joint_attention_kwargs=joint_attention_kwargs,
+            guidance=guidance,
             return_dict=False,
         )[0]
         return noise_pred
