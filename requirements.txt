@@ -8,3 +8,4 @@ schedulefree
 accelerate
 peft
 optimum-quanto
+bitsandbytes
