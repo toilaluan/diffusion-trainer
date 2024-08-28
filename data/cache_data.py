@@ -75,9 +75,21 @@ class CacheFlux:
 
         torch.save(feeds, os.path.join(self.save_dir, f"{filename}.pt"))
 
+    def decode_from_latent(self, latents: torch.Tensor):
+        latents = latents.to(self.device)
+        latents = (
+            latents * self.pipeline.vae.config.scaling_factor
+        ) + self.pipeline.vae.config.shift_factor
+
+        image = self.pipeline.vae.decode(latents, return_dict=False)[0]
+        image = self.image_processor.postprocess(image, output_type="pil")
+        image[0].save("image.webp")
+
 
 if __name__ == "__main__":
     cache_flux = CacheFlux()
     image = Image.open("data/image.webp")
     prompt = "A beautiful landscape painting"
     cache_flux(image, prompt, "image")
+    feeds = torch.load("data/cache/image.pt")
+    cache_flux.decode_from_latent(feeds["latents"])
