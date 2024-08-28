@@ -47,7 +47,7 @@ class CacheFlux:
         )
 
         num_channels_latents = self.transformer_config.in_channels // 4
-        _, latent_image_ids = self.pipeline.prepare_latents(
+        noise_latents, latent_image_ids = self.pipeline.prepare_latents(
             batch_size=1,
             num_channels_latents=num_channels_latents,
             height=height,
@@ -57,6 +57,7 @@ class CacheFlux:
             generator=None,
             latents=None,
         )
+        print(noise_latents.shape)
         latents = self.image_processor.preprocess(
             image,
         )
@@ -76,6 +77,7 @@ class CacheFlux:
             height=height,
             width=width,
         )
+        assert latents.shape == noise_latents.shape
         guidance = (
             torch.tensor([self.guidance_scale]).to(self.torch_dtype).to(self.device)
         )
