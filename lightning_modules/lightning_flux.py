@@ -21,6 +21,7 @@ class FluxLightning(L.LightningModule):
             torch_dtype=self.torch_dtype,
             subfolder="transformer",
         )
+        self.denoiser.to("cuda")
 
     def forward(
         self,
