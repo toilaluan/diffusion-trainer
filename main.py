@@ -1,5 +1,5 @@
 from lightning_modules.lightning_flux import FluxLightning
-from data.core_data import CoreCachedDataset
+from data.core_data import CoreCachedDataset, collate_fn
 import torch
 import pytorch_lightning as pl
 import os
@@ -69,7 +69,7 @@ model.to("cuda")
 cached_dataset = CoreCachedDataset(cached_folder="debug/test_cache")
 
 train_dataloader = torch.utils.data.DataLoader(
-    cached_dataset, batch_size=2, shuffle=True
+    cached_dataset, batch_size=2, shuffle=True, collate_fn=collate_fn
 )
 
 trainer = pl.Trainer(
