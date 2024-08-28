@@ -88,6 +88,7 @@ class CacheFlux:
 
         torch.save(feeds, os.path.join(self.save_dir, f"{filename}.pt"))
 
+    @torch.no_grad()
     def decode_from_latent(self, latents: torch.Tensor, height, width):
         latents = self.pipeline._unpack_latents(
             latents, height, width, self.vae_scale_factor
