@@ -10,12 +10,16 @@ class FluxLightning(L.LightningModule):
         denoiser_pretrained_path: str,
         learning_rate: float = 1e-4,
         weight_decay: float = 1e-4,
+        torch_dtype: torch.dtype = torch.float16,
     ):
         super().__init__()
         self.learning_rate = learning_rate
         self.weight_decay = weight_decay
+        self.torch_dtype = torch_dtype
         self.denoiser = diffusers.FluxTransformer2DModel.from_pretrained(
-            denoiser_pretrained_path, torch_dtype=torch.float16, subfolder="transformer"
+            denoiser_pretrained_path,
+            torch_dtype=self.torch_dtype,
+            subfolder="transformer",
         )
 
     def forward(

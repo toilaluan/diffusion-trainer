@@ -5,12 +5,15 @@ from data.cache_data import CacheFlux
 from data.core_data import CoreDataset, CoreCachedDataset, collate_fn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+import torch
 
 metadata_file = "dataset/itay_test/metadata.json"
 root_folder = "dataset/itay_test/images"
+torch_dtype = torch.float16
+
 dataset = CoreDataset(root_folder=root_folder, metadata_file=metadata_file)
 pbar = tqdm(desc=f"Caching root folder: {root_folder}", total=len(dataset))
-cache_flux = CacheFlux(save_dir="debug/test_cache")
+cache_flux = CacheFlux(save_dir="debug/test_cache", torch_dtype=torch_dtype)
 for item in dataset:
     image, caption = item
     cache_flux(image, caption, "image")

@@ -72,17 +72,20 @@ class CoreCachedDataset(Dataset):
     def __len__(self):
         return len(self.cached_files)
 
-    def add_noise(self, latent: torch.Tensor):
+    def add_noise(self, latent: torch.Tensor, dtype: torch.dtype):
         sigma = random.random()
-        noised_latent = (1 - sigma) * latent + sigma * torch.randn_like(latent)
+        noised_latent = (1 - sigma) * latent + sigma * torch.randn_like(latent).to(
+            dtype
+        )
         return noised_latent, sigma
 
     def __getitem__(self, index):
         cached_file = self.cached_files[index]
         feeds = torch.load(cached_file)
         latent = feeds["latents"]
-        noised_latent, sigma = self.add_noise(latent)
-        feeds["timestep"] = torch.Tensor([sigma])
+        dtype = latent.dtype
+        noised_latent, sigma = self.add_noise(latent, dtype)
+        feeds["timestep"] = torch.Tensor([sigma]).to(dtype)
         feeds["latents"] = noised_latent
         step = int(sigma * self.max_step)
         target = latent

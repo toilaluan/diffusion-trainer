@@ -12,19 +12,22 @@ class CacheFlux:
         self,
         pretrained_path: str = "black-forest-labs/FLUX.1-dev",
         save_dir: str = "data/cache",
+        torch_dtype: torch.dtype = torch.float16,
     ):
         self.save_dir = save_dir
         self.pretrained_path = pretrained_path
         self.pipeline = diffusers.FluxPipeline.from_pretrained(
-            pretrained_path, transformer=None
+            pretrained_path, transformer=None, torch_dtype=torch_dtype
         )
         self.transformer_config = transformers.PretrainedConfig.from_pretrained(
-            pretrained_path, subfolder="transformer"
+            pretrained_path,
+            subfolder="transformer",
         )
         vae_scale_factor = 2 ** (len(self.pipeline.vae.config.block_out_channels))
         self.image_processor = VaeImageProcessor(vae_scale_factor=vae_scale_factor)
         self.device = "cuda"
         self.pipeline.to(self.device)
+        self.torch_dtype = torch_dtype
         os.makedirs(save_dir, exist_ok=True)
 
     def __call__(self, image: Image.Image, prompt: str, filename: str):
@@ -62,11 +65,11 @@ class CacheFlux:
         ) * self.pipeline.vae.config.scaling_factor
 
         feeds = {
-            "latents": latents,
-            "pooled_prompt_embeds": pooled_prompt_embeds,
-            "prompt_embeds": prompt_embeds,
-            "text_ids": text_ids,
-            "latent_image_ids": latent_image_ids,
+            "latents": latents.to(self.torch_dtype),
+            "pooled_prompt_embeds": pooled_prompt_embeds.to(self.torch_dtype),
+            "prompt_embeds": prompt_embeds.to(self.torch_dtype),
+            "text_ids": text_ids.to(self.torch_dtype),
+            "latent_image_ids": latent_image_ids.to(self.torch_dtype),
         }
 
         torch.save(feeds, os.path.join(self.save_dir, f"{filename}.pt"))
