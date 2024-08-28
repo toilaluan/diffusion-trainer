@@ -41,7 +41,8 @@ dataloader = DataLoader(
 
 flux_lightning = FluxLightning(denoiser_pretrained_path="black-forest-labs/FLUX.1-dev")
 flux_lightning.to("cuda")
-for batch in dataloader:
-    loss = flux_lightning.training_step(batch, 0)
-    print(loss)
-    break
+with torch.autocast(dtype=torch.bfloat16):
+    for batch in dataloader:
+        loss = flux_lightning.training_step(batch, 0)
+        print(loss)
+        break
