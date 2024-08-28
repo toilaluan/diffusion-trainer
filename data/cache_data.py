@@ -64,6 +64,14 @@ class CacheFlux:
             latents - self.pipeline.vae.config.shift_factor
         ) * self.pipeline.vae.config.scaling_factor
 
+        latents = self.pipeline._pack_latents(
+            latents,
+            batch_size=1,
+            num_channels_latents=num_channels_latents,
+            height=height,
+            width=width,
+        )
+
         feeds = {
             "latents": latents.to(self.torch_dtype),
             "pooled_prompt_embeds": pooled_prompt_embeds.to(self.torch_dtype),
