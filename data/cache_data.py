@@ -23,8 +23,8 @@ class CacheFlux:
             pretrained_path,
             subfolder="transformer",
         )
-        vae_scale_factor = 2 ** (len(self.pipeline.vae.config.block_out_channels))
-        self.image_processor = VaeImageProcessor(vae_scale_factor=vae_scale_factor)
+        self.vae_scale_factor = 2 ** (len(self.pipeline.vae.config.block_out_channels))
+        self.image_processor = VaeImageProcessor(vae_scale_factor=self.vae_scale_factor)
         self.device = "cuda"
         self.pipeline.to(self.device)
         self.torch_dtype = torch_dtype
@@ -82,7 +82,10 @@ class CacheFlux:
 
         torch.save(feeds, os.path.join(self.save_dir, f"{filename}.pt"))
 
-    def decode_from_latent(self, latents: torch.Tensor):
+    def decode_from_latent(self, latents: torch.Tensor, height, width):
+        latents = self.pipeline._unpack_latents(
+            latents, height, width, self.vae_scale_factor
+        )
         latents = latents.to(self.device)
         latents = (
             latents / self.pipeline.vae.config.scaling_factor
@@ -96,20 +99,14 @@ class CacheFlux:
 if __name__ == "__main__":
     with torch.no_grad():
         cache_flux = CacheFlux(save_dir="debug/cache")
-        image = Image.open("debug/image.webp")
-        prompt = "A beautiful landscape painting"
-        cache_flux(image, prompt, "image")
-        feeds = torch.load("data/cache/image.pt")
-        image = cache_flux.decode_from_latent(feeds["latents"])
-        image.save("debug/image_reconstructed.jpg")
-
         dataset = CoreDataset(
             root_folder="dataset/itay_test/images",
             metadata_file="dataset/itay_test/metadata.json",
         )
         image, caption = dataset[0]
+        height, width = image.size
         image.save("debug/image_2.jpg")
         cache_flux(image, caption, "image")
         feeds = torch.load("data/cache/image.pt")
-        image = cache_flux.decode_from_latent(feeds["latents"])
+        image = cache_flux.decode_from_latent(feeds["latents"], height, width)
         image.save("debug/image_2_reconstructed.jpg")
