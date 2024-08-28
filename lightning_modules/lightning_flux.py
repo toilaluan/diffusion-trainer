@@ -27,6 +27,7 @@ class FluxLightning(L.LightningModule):
             subfolder="transformer",
         )
         self.apply_lora()
+        self.denoiser.enable_gradient_checkpointing()
         self.print_trainable_parameters(self.denoiser)
         self.denoiser.to("cuda")
 
