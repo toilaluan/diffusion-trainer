@@ -54,8 +54,6 @@ class CacheFlux:
         )
         latents = self.image_processor.preprocess(
             image,
-            height,
-            width,
         )
         latents = latents.to(self.device)
         print(latents.shape)
@@ -78,7 +76,7 @@ class CacheFlux:
     def decode_from_latent(self, latents: torch.Tensor):
         latents = latents.to(self.device)
         latents = (
-            latents * self.pipeline.vae.config.scaling_factor
+            latents / self.pipeline.vae.config.scaling_factor
         ) + self.pipeline.vae.config.shift_factor
 
         image = self.pipeline.vae.decode(latents, return_dict=False)[0]
