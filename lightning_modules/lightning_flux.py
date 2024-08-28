@@ -1,4 +1,4 @@
-import lightning as L
+import pytorch_lightning as L
 import diffusers
 import torch
 import schedulefree

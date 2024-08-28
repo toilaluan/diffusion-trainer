@@ -70,7 +70,6 @@ cached_dataset = CoreCachedDataset(cached_folder="debug/test_cache")
 
 train_dataloader = torch.utils.data.DataLoader(
     cached_dataset, batch_size=2, shuffle=True
-)
 
 trainer = pl.Trainer(
     accelerator=args.accelerator,
