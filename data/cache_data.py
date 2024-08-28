@@ -72,8 +72,8 @@ class CacheFlux:
             latents,
             batch_size=1,
             num_channels_latents=num_channels_latents,
-            height=latents.shape[2],
-            width=latents.shape[3],
+            height=height,
+            width=width,
         )
         guidance = (
             torch.tensor([self.guidance_scale]).to(self.torch_dtype).to(self.device)
