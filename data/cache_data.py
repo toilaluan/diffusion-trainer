@@ -39,7 +39,7 @@ class CacheFlux:
         )
 
         num_channels_latents = self.transformer_config.in_channels // 4
-        _, latent_image_ids = self.prepare_latents(
+        _, latent_image_ids = self.pipeline.prepare_latents(
             1,
             num_channels_latents,
             height,
