@@ -92,12 +92,12 @@ if __name__ == "__main__":
         image = cache_flux.decode_from_latent(feeds["latents"])
         image.save("data/image_reconstructed.png")
 
-    dataset = CoreDataset(
-        root_folder="dataset/itay_test/images",
-        metadata_file="dataset/itay_test/metadata.json",
-    )
-    image, caption = dataset[0]
-    cache_flux(image, caption, "image")
-    feeds = torch.load("data/cache/image.pt")
-    image = cache_flux.decode_from_latent(feeds["latents"])
-    image.save("data/image_reconstructed.png")
+        dataset = CoreDataset(
+            root_folder="dataset/itay_test/images",
+            metadata_file="dataset/itay_test/metadata.json",
+        )
+        image, caption = dataset[0]
+        cache_flux(image, caption, "image")
+        feeds = torch.load("data/cache/image.pt")
+        image = cache_flux.decode_from_latent(feeds["latents"])
+        image.save("data/image_reconstructed.png")
