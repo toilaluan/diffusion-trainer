@@ -56,9 +56,7 @@ class CacheFlux:
             image,
         )
         latents = latents.to(self.device)
-        print(latents.shape)
         latents = self.pipeline.vae.encode(latents).latent_dist.sample()
-        print(latents.shape)
         latents = (
             latents - self.pipeline.vae.config.shift_factor
         ) * self.pipeline.vae.config.scaling_factor
@@ -81,7 +79,7 @@ class CacheFlux:
 
         image = self.pipeline.vae.decode(latents, return_dict=False)[0]
         image = self.image_processor.postprocess(image, output_type="pil")
-        image[0].save("image.webp")
+        return image[0]
 
 
 if __name__ == "__main__":
@@ -91,4 +89,5 @@ if __name__ == "__main__":
         prompt = "A beautiful landscape painting"
         cache_flux(image, prompt, "image")
         feeds = torch.load("data/cache/image.pt")
-        cache_flux.decode_from_latent(feeds["latents"])
+        image = cache_flux.decode_from_latent(feeds["latents"])
+        image.save("data/image_reconstructed.png")
