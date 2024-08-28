@@ -4,3 +4,5 @@ diffusers
 hf_transfer
 sentencepiece
 protobuf
+schedulefree
+
