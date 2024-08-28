@@ -35,12 +35,12 @@ class FluxLightning(L.LightningModule):
         guidance: torch.Tensor = None,
         **kwargs
     ):
-        print(latents.shape)
-        print(pooled_prompt_embeds.shape)
-        print(prompt_embeds.shape)
-        print(text_ids.shape)
-        print(latent_image_ids.shape)
-        print(guidance.shape)
+        print(latents.shape, latents.dtype)
+        print(pooled_prompt_embeds.shape, pooled_prompt_embeds.dtype)
+        print(prompt_embeds.shape, prompt_embeds.dtype)
+        print(text_ids.shape, text_ids.dtype)
+        print(latent_image_ids.shape, latent_image_ids.dtype)
+        print(guidance.shape, guidance.dtype)
         noise_pred = self.denoiser(
             hidden_states=latents,
             timestep=timestep,
