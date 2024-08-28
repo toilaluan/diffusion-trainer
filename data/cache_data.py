@@ -84,20 +84,21 @@ class CacheFlux:
 
 if __name__ == "__main__":
     with torch.no_grad():
-        cache_flux = CacheFlux()
-        image = Image.open("data/image.webp")
+        cache_flux = CacheFlux(save_dir="debug/cache")
+        image = Image.open("debug/image.webp")
         prompt = "A beautiful landscape painting"
         cache_flux(image, prompt, "image")
         feeds = torch.load("data/cache/image.pt")
         image = cache_flux.decode_from_latent(feeds["latents"])
-        image.save("data/image_reconstructed.png")
+        image.save("debug/image_reconstructed.jpg")
 
         dataset = CoreDataset(
             root_folder="dataset/itay_test/images",
             metadata_file="dataset/itay_test/metadata.json",
         )
         image, caption = dataset[0]
+        image.save("debug/image_2.jpg")
         cache_flux(image, caption, "image")
         feeds = torch.load("data/cache/image.pt")
         image = cache_flux.decode_from_latent(feeds["latents"])
-        image.save("data/image_reconstructed.png")
+        image.save("debug/image_2_reconstructed.jpg")
