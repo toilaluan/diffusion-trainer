@@ -25,8 +25,6 @@ class FluxLightning(L.LightningModule):
             torch_dtype=self.torch_dtype,
             subfolder="transformer",
         )
-        quantize(self.denoiser, qfloat8)
-        freeze(self.denoiser)
         self.apply_lora()
         self.print_trainable_parameters(self.denoiser)
         self.denoiser.to("cuda")
@@ -100,7 +98,10 @@ class FluxLightning(L.LightningModule):
         return mean_loss
 
     def configure_optimizers(self):
+        params_to_optimize = list(
+            filter(lambda p: p.requires_grad, self.denoiser.parameters())
+        )
         optimizer = schedulefree.AdamWScheduleFree(
-            self.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay
+            params_to_optimize, lr=self.learning_rate, weight_decay=self.weight_decay
         )
         return optimizer
