@@ -84,14 +84,19 @@ class FluxLightning(L.LightningModule):
         return noise_pred
 
     def loss_fn(self, noise_pred, targets):
-        loss = torch.nn.functional.mse_loss(noise_pred, targets)
+        loss = torch.nn.functional.mse_loss(noise_pred, targets, reduction="none")
+        loss = loss.mean(dim=(1, 2, 3))
         return loss
 
     def training_step(self, batch, batch_idx):
         feeds, targets, metadata = batch
         noise_pred = self(**feeds)
         loss = self.loss_fn(noise_pred, targets)
-        return loss
+        mean_loss = loss.mean()
+        steps = [item["step"] for item in metadata]
+        log = {f"Step {step} loss": step_loss for step, step_loss in zip(steps, loss)}
+        self.log(log, on_step=True, on_epoch=True, prog_bar=True)
+        return mean_loss
 
     def configure_optimizers(self):
         optimizer = schedulefree.AdamWScheduleFree(
