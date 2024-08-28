@@ -39,6 +39,7 @@ class FluxLightning(L.LightningModule):
         print(prompt_embeds.shape)
         print(text_ids.shape)
         print(latent_image_ids.shape)
+        print(guidance.shape)
         noise_pred = self.denoiser(
             hidden_states=latents,
             timestep=timestep,
