@@ -4,6 +4,7 @@ import diffusers
 from data.core_data import CoreDataset
 from PIL import Image
 import os
+from diffusers.image_processor import VaeImageProcessor
 
 
 class CacheFlux:
@@ -20,6 +21,8 @@ class CacheFlux:
         self.transformer_config = transformers.PretrainedConfig.from_pretrained(
             pretrained_path, subfolder="transformer"
         )
+        vae_scale_factor = 2 ** (len(self.pipeline.vae.config.block_out_channels))
+        self.image_processor = VaeImageProcessor(vae_scale_factor=vae_scale_factor)
         self.device = "cuda"
         self.pipeline.to(self.device)
         os.makedirs(save_dir, exist_ok=True)
@@ -49,13 +52,14 @@ class CacheFlux:
             generator=None,
             latents=None,
         )
-        latents = self.pipeline.image_processor.encode_image(
+        latents = self.image_processor.preprocess(
             image,
             height,
             width,
-            device=self.device,
-            latents=latents,
         )
+        print(latents.shape)
+        latents = self.pipeline.vae.encode(latents)
+        print(latents.shape)
         latents = (
             latents - self.pipeline.vae.config.shift_factor
         ) * self.pipeline.vae.config.scaling_factor
