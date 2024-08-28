@@ -68,8 +68,8 @@ class CacheFlux:
             latents,
             batch_size=1,
             num_channels_latents=num_channels_latents,
-            height=height,
-            width=width,
+            height=latents.shape[2],
+            width=latents.shape[3],
         )
 
         feeds = {
