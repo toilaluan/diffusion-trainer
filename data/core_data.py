@@ -82,6 +82,7 @@ class CoreCachedDataset(Dataset):
         feeds = torch.load(cached_file)
         latent = feeds["latents"]
         noised_latent, sigma = self.add_noise(latent)
+        feeds["timestep"] = torch.Tensor([sigma])
         feeds["latents"] = noised_latent
         step = int(sigma * self.max_step)
         target = latent
@@ -96,6 +97,6 @@ class CoreCachedDataset(Dataset):
 
 def collate_fn(batch):
     feeds, targets, metadata = zip(*batch)
-    feeds = {k: torch.stack([f[k] for f in feeds]) for k in feeds[0]}
-    targets = torch.stack(targets)
+    feeds = {k: torch.cat([f[k] for f in feeds], dim=0) for k in feeds[0]}
+    targets = torch.cat(targets, dim=0)
     return feeds, targets, metadata
