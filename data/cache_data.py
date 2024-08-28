@@ -58,7 +58,7 @@ class CacheFlux:
         latents = self.image_processor.preprocess(
             image,
         )
-        latents = latents.to(self.device)
+        latents = latents.to(self.device, self.torch_dtype)
         latents = self.pipeline.vae.encode(latents).latent_dist.sample()
         latents = (
             latents - self.pipeline.vae.config.shift_factor
