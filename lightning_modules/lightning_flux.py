@@ -2,6 +2,8 @@ import lightning as L
 import diffusers
 import torch
 import schedulefree
+from peft import LoraConfig, set_peft_model_state_dict
+from peft.utils import get_peft_model_state_dict
 
 
 class FluxLightning(L.LightningModule):
@@ -22,6 +24,14 @@ class FluxLightning(L.LightningModule):
             subfolder="transformer",
         )
         self.denoiser.to("cuda")
+
+    def apply_lora(self):
+        transformer_lora_config = LoraConfig(
+            r=args.rank,
+            lora_alpha=args.rank,
+            init_lora_weights="gaussian",
+            target_modules=["to_k", "to_q", "to_v", "to_out.0"],
+        )
 
     def forward(
         self,

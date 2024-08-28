@@ -5,4 +5,5 @@ hf_transfer
 sentencepiece
 protobuf
 schedulefree
-
+accelerate
+peft
