@@ -40,13 +40,14 @@ class CacheFlux:
 
         num_channels_latents = self.transformer_config.in_channels // 4
         _, latent_image_ids = self.pipeline.prepare_latents(
-            1,
-            num_channels_latents,
-            height,
-            width,
-            prompt_embeds.dtype,
-            self.device,
-            latents,
+            batch_size=1,
+            num_channels_latents=num_channels_latents,
+            height=height,
+            width=width,
+            dtype=prompt_embeds.dtype,
+            device=self.device,
+            generator=None,
+            latents=None,
         )
         latents = self.pipeline.image_processor.encode_image(
             image,
