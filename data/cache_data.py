@@ -57,6 +57,7 @@ class CacheFlux:
             height,
             width,
         )
+        latents = latents.to(self.device)
         print(latents.shape)
         latents = self.pipeline.vae.encode(latents)
         print(latents.shape)
