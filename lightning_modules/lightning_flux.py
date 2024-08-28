@@ -47,7 +47,7 @@ class FluxLightning(L.LightningModule):
         return torch.nn.functional.mse_loss(noise_pred, targets)
 
     def training_step(self, batch, batch_idx):
-        metadata, feeds, targets = batch
+        feeds, targets, metadata = batch
         noise_pred = self(**feeds)
         loss = self.loss_fn(noise_pred, targets)
         return loss
