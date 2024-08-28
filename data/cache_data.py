@@ -72,7 +72,9 @@ class CacheFlux:
             height=latents.shape[2],
             width=latents.shape[3],
         )
-        guidance = torch.tensor([self.guidance_scale]).to(self.torch_dtype)
+        guidance = (
+            torch.tensor([self.guidance_scale]).to(self.torch_dtype).to(self.device)
+        )
 
         feeds = {
             "latents": latents.to(self.torch_dtype),
