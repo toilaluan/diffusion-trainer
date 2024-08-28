@@ -1,11 +1,21 @@
 # This file is used to test the cache dataset then use the cache dataset to train the model.
 
+
 from lightning_modules.lightning_flux import FluxLightning
 from data.cache_data import CacheFlux
 from data.core_data import CoreDataset, CoreCachedDataset, collate_fn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 import torch
+import gc
+
+
+def flush():
+    gc.collect()
+    torch.cuda.empty_cache()
+    torch.cuda.reset_max_memory_allocated()
+    torch.cuda.reset_peak_memory_stats()
+
 
 metadata_file = "dataset/itay_test/metadata.json"
 root_folder = "dataset/itay_test/images"
@@ -19,6 +29,9 @@ for item in dataset:
     cache_flux(image, caption, "image")
     pbar.update(1)
 
+del cache_flux
+
+flush()
 
 cached_dataset = CoreCachedDataset(cached_folder="debug/test_cache")
 
