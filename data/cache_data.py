@@ -87,9 +87,10 @@ class CacheFlux:
 
 
 if __name__ == "__main__":
-    cache_flux = CacheFlux()
-    image = Image.open("data/image.webp")
-    prompt = "A beautiful landscape painting"
-    cache_flux(image, prompt, "image")
-    feeds = torch.load("data/cache/image.pt")
-    cache_flux.decode_from_latent(feeds["latents"])
+    with torch.no_grad():
+        cache_flux = CacheFlux()
+        image = Image.open("data/image.webp")
+        prompt = "A beautiful landscape painting"
+        cache_flux(image, prompt, "image")
+        feeds = torch.load("data/cache/image.pt")
+        cache_flux.decode_from_latent(feeds["latents"])
