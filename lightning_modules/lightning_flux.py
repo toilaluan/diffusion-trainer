@@ -33,6 +33,11 @@ class FluxLightning(L.LightningModule):
         joint_attention_kwargs: dict = None,
         **kwargs
     ):
+        print(latents.shape)
+        print(pooled_prompt_embeds.shape)
+        print(prompt_embeds.shape)
+        print(text_ids.shape)
+        print(latent_image_ids.shape)
         noise_pred = self.denoiser(
             hidden_states=latents,
             timestep=timestep,
