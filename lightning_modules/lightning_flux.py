@@ -26,6 +26,8 @@ class FluxLightning(L.LightningModule):
             torch_dtype=self.torch_dtype,
             subfolder="transformer",
         )
+        quantize(self.denoiser, qfloat8)
+        freeze(self.denoiser)
         self.apply_lora()
         self.denoiser.enable_gradient_checkpointing()
         self.print_trainable_parameters(self.denoiser)
