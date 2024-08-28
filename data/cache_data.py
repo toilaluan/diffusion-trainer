@@ -68,6 +68,7 @@ class CacheFlux:
 
         height = 2 * (int(height) // self.vae_scale_factor)
         width = 2 * (int(width) // self.vae_scale_factor)
+        print(height, width)
         latents = self.pipeline._pack_latents(
             latents,
             batch_size=1,
