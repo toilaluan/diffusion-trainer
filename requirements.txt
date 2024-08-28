@@ -1,0 +1,4 @@
+lightning
+transformers
+diffusers
+hf_transfer
