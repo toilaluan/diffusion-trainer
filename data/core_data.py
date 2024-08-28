@@ -92,3 +92,10 @@ class CoreCachedDataset(Dataset):
         }
 
         return feeds, target, metadata
+
+
+def collate_fn(batch):
+    feeds, targets, metadata = zip(*batch)
+    feeds = {k: torch.stack([f[k] for f in feeds]) for k in feeds[0]}
+    targets = torch.stack(targets)
+    return feeds, targets, metadata
