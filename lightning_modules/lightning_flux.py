@@ -140,10 +140,9 @@ class FluxLightning(L.LightningModule):
         params_to_optimize = list(
             filter(lambda p: p.requires_grad, self.denoiser.parameters())
         )
-        optimizer = bnb.optim.Adam8bit(
+        optimizer = schedulefree.AdamWScheduleFree(
             params_to_optimize,
             lr=self.learning_rate,
             weight_decay=self.weight_decay,
-            min_8bit_size=16384,
         )
         return optimizer
