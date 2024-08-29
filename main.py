@@ -63,6 +63,7 @@ optimizer = model.configure_optimizers()
 accelerator = accelerate.Accelerator()
 
 model.to(accelerator.device)
+model.pipeline.to(accelerator.device)
 
 model, optimizer, train_dataloader, val_dataloader = accelerator.prepare(
     model, optimizer, train_dataloader, val_dataloader
