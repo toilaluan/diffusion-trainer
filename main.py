@@ -72,6 +72,8 @@ model, optimizer, train_dataloader, val_dataloader = accelerator.prepare(
 total_steps = len(train_dataloader) * args.max_epochs
 
 model.train()
+val_batch = next(iter(val_dataloader))
+
 
 while total_steps > 0:
 
@@ -87,7 +89,6 @@ while total_steps > 0:
 
         if i % 50 == 0:
             print("Validating")
-            for j, val_batch in enumerate(val_dataloader):
-                model.validation_step(val_batch, j)
+            model.validation_step(val_batch, 0)
 
         total_steps -= 1
