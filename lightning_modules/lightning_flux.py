@@ -42,7 +42,6 @@ class FluxLightning(nn.Module):
         flush()
         self.apply_lora()
         self.denoiser.enable_gradient_checkpointing()
-        self.denoiser.train()
         self.print_trainable_parameters(self.denoiser)
         self.pipeline = diffusers.FluxPipeline.from_pretrained(
             "black-forest-labs/FLUX.1-dev",
@@ -50,7 +49,7 @@ class FluxLightning(nn.Module):
             transformer=self.denoiser,
             text_encoder=None,
             text_encoder_2=None,
-        ).to("cuda")
+        )
 
     @staticmethod
     def print_trainable_parameters(model):
@@ -103,24 +102,18 @@ class FluxLightning(nn.Module):
 
     def loss_fn(self, noise_pred, targets):
         loss = torch.nn.functional.mse_loss(noise_pred, targets, reduction="none")
-        loss = loss.mean(dim=(1, 2))
+        loss = loss.mean()
         return loss
 
     def training_step(self, batch, batch_idx):
         feeds, targets, metadata = batch
+        for k, v in feeds.items():
+            feeds[k] = v.to(self.device)
         noise_pred = self(**feeds)
         loss = self.loss_fn(noise_pred, targets)
-        mean_loss = loss.mean()
-        steps = [item["step"] for item in metadata]
-        log = {
-            f"Timestep {step} loss": step_loss for step, step_loss in zip(steps, loss)
-        }
-        self.log_dict(log, on_step=True, on_epoch=True, prog_bar=False)
-        self.log("Mean loss", mean_loss, on_step=True, on_epoch=True, prog_bar=True)
-        return mean_loss
+        return loss
 
     def validation_step(self, batch, batch_idx):
-        self.denoiser.eval()
         feeds, targets, metadata = batch
         prompt_embeds = feeds["prompt_embeds"][:1]
         pooled_prompt_embeds = feeds["pooled_prompt_embeds"][:1]
@@ -135,7 +128,6 @@ class FluxLightning(nn.Module):
             num_inference_steps=steps,
             generator=torch.Generator().manual_seed(42),
         ).images[0]
-        self.denoiser.train()
         image = wandb.Image(image, caption="TODO: Add caption")
         wandb.log({f"Validation {batch_idx} image": image})
 

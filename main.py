@@ -1,29 +1,12 @@
 from lightning_modules.lightning_flux import FluxLightning
 from data.core_data import CoreCachedDataset, collate_fn
 import torch
-import pytorch_lightning as pl
 import os
 import argparse
 from lightning.pytorch.loggers import WandbLogger
 from pytorch_lightning.callbacks import Callback, ModelCheckpoint, LearningRateMonitor
-
-
-class MyPrintingCallback(Callback):
-    def on_train_start(self, trainer, pl_module):
-        print("Training is starting")
-
-    def on_train_end(self, trainer, pl_module):
-        print("Training is ending")
-
-
-callbacks = [
-    MyPrintingCallback(),
-    ModelCheckpoint(
-        dirpath="checkpoints",
-        every_n_train_steps=100,
-    ),
-    LearningRateMonitor("step"),
-]
+import wandb
+import accelerate
 
 
 def parse_args():
@@ -65,7 +48,6 @@ model = FluxLightning(
     learning_rate=1e-5,
     weight_decay=1e-5,
 )
-model.to("cuda")
 
 cached_dataset = CoreCachedDataset(cached_folder="debug/test_cache")
 
@@ -73,21 +55,32 @@ train_dataloader = torch.utils.data.DataLoader(
     cached_dataset, batch_size=args.batch_size, shuffle=True, collate_fn=collate_fn
 )
 val_dataloader = torch.utils.data.DataLoader(
-    cached_dataset, batch_size=args.batch_size, shuffle=False, collate_fn=collate_fn
+    cached_dataset, batch_size=1, shuffle=False, collate_fn=collate_fn
 )
 
-trainer = pl.Trainer(
-    accelerator=args.accelerator,
-    accumulate_grad_batches=args.accumulate_grad_batches,
-    precision=args.precision,
-    callbacks=callbacks,
-    max_epochs=args.max_epochs,
-    log_every_n_steps=args.log_every_n_steps,
-    check_val_every_n_epoch=args.check_val_every_n_epoch,
-    logger=wandb_logger,
-    strategy=args.strategy,
-    devices=args.devices,
-    limit_val_batches=1,
+optimizer = model.configure_optimizers()
+
+accelerator = accelerate.Accelerator()
+
+model.to(accelerator.device)
+
+model, optimizer, train_dataloader, val_dataloader = accelerator.prepare(
+    model, optimizer, train_dataloader, val_dataloader
 )
 
-trainer.fit(model, train_dataloader, val_dataloader)
+model.train()
+
+for i, batch in enumerate(train_dataloader):
+    optimizer.zero_grad()
+    loss = model.training_step(batch, 0)
+    wandb.log({"loss": loss})
+    loss.backward()
+    optimizer.step()
+
+    if i % 10 == 0:
+        print(f"Step {i} Loss {loss}")
+
+    if i % 50 == 0:
+        print("Validating")
+        for j, val_batch in enumerate(val_dataloader):
+            model.validation_step(val_batch, j)
