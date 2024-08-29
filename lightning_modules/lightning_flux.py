@@ -68,10 +68,10 @@ class FluxLightning(L.LightningModule):
 
     def apply_lora(self):
         transformer_lora_config = LoraConfig(
-            r=16,
+            r=32,
             lora_alpha=32,
-            init_lora_weights=False,
-            target_modules=["to_k", "to_q", "to_v"],
+            init_lora_weights="gaussian",
+            target_modules=["to_k", "to_q", "to_v", "to_out.0."],
         )
         self.denoiser.add_adapter(transformer_lora_config)
 
