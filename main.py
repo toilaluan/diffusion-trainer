@@ -41,7 +41,7 @@ def parse_args():
 
 args = parse_args()
 
-wandb_logger = WandbLogger(project="flux-lora")
+wandb.init(project=args.project)
 
 model = FluxLightning(
     denoiser_pretrained_path="black-forest-labs/FLUX.1-dev",
