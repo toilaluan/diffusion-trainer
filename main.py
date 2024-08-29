@@ -68,19 +68,25 @@ model, optimizer, train_dataloader, val_dataloader = accelerator.prepare(
     model, optimizer, train_dataloader, val_dataloader
 )
 
+total_steps = len(train_dataloader) * args.max_epochs
+
 model.train()
 
-for i, batch in enumerate(train_dataloader):
-    optimizer.zero_grad()
-    loss = model.training_step(batch, 0)
-    wandb.log({"loss": loss})
-    loss.backward()
-    optimizer.step()
+while total_steps > 0:
 
-    if i % 10 == 0:
-        print(f"Step {i} Loss {loss}")
+    for i, batch in enumerate(train_dataloader):
+        optimizer.zero_grad()
+        loss = model.training_step(batch, 0)
+        wandb.log({"loss": loss})
+        loss.backward()
+        optimizer.step()
 
-    if i % 50 == 0:
-        print("Validating")
-        for j, val_batch in enumerate(val_dataloader):
-            model.validation_step(val_batch, j)
+        if i % 10 == 0:
+            print(f"Step {i} Loss {loss}")
+
+        if i % 50 == 0:
+            print("Validating")
+            for j, val_batch in enumerate(val_dataloader):
+                model.validation_step(val_batch, j)
+
+        total_steps -= 1
