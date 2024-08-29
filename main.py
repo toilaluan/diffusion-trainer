@@ -79,7 +79,6 @@ trainer = pl.Trainer(
     precision=args.precision,
     callbacks=callbacks,
     max_epochs=args.max_epochs,
-    val_check_interval=args.val_check_interval,
     log_every_n_steps=args.log_every_n_steps,
     check_val_every_n_epoch=args.check_val_every_n_epoch,
     logger=wandb_logger,
