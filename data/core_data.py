@@ -18,7 +18,7 @@ class CoreDataset(Dataset):
     def _init_bucket(
         self,
         base_size: int = 1024,
-        min_size: int = 256,
+        min_size: int = 512,
         max_size: int = 1536,
         divisible: int = 32,
     ):
@@ -37,12 +37,17 @@ class CoreDataset(Dataset):
             for i in range(1, (max_size - base_size) // divisible)
         ]
         sizes = {}
+        base_res = (base_size * base_size) ** -2
         for width in widths:
             for height in heights:
+                res = (width * height) ** -2
+                if not (base_res * 8 < res < base_res * 1.1):
+                    continue
                 ratio = width / height
                 sizes[ratio] = (width, height)
         print(f"Initialized {len(sizes)} bucket sizes")
-        print(sizes)
+        for k, v in sizes:
+            print(f"Bucket ratio: {k} size: {v}")
         return sizes
 
     def __len__(self):
