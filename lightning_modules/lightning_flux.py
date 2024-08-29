@@ -7,6 +7,15 @@ from peft.utils import get_peft_model_state_dict
 import math
 from optimum.quanto import freeze, qfloat8, quantize, qint4
 import bitsandbytes as bnb
+import gc
+import wandb
+
+
+def flush():
+    gc.collect()
+    torch.cuda.empty_cache()
+    torch.cuda.reset_max_memory_allocated()
+    torch.cuda.reset_peak_memory_stats()
 
 
 class FluxLightning(L.LightningModule):
@@ -24,13 +33,23 @@ class FluxLightning(L.LightningModule):
         self.denoiser = diffusers.FluxTransformer2DModel.from_pretrained(
             denoiser_pretrained_path,
             subfolder="transformer",
+            torch_dtype=torch_dtype,
         )
         self.denoiser.to("cuda")
         quantize(self.denoiser, weights=qfloat8)
         freeze(self.denoiser)
+        flush()
         self.apply_lora()
         self.denoiser.enable_gradient_checkpointing()
         self.print_trainable_parameters(self.denoiser)
+        self.denoiser.train()
+        self.pipeline = diffusers.FluxPipeline.from_pretrained(
+            "black-forest-labs/FLUX.1-dev",
+            torch_dtype=self.torch_dtype,
+            transformer=self.denoiser,
+            text_encoder=None,
+            text_encoder_2=None,
+        ).to("cuda")
 
     @staticmethod
     def print_trainable_parameters(model):
@@ -49,10 +68,10 @@ class FluxLightning(L.LightningModule):
 
     def apply_lora(self):
         transformer_lora_config = LoraConfig(
-            r=2,
+            r=16,
             lora_alpha=32,
             init_lora_weights=False,
-            target_modules=["to_k"],
+            target_modules=["to_k", "to_q", "to_v"],
         )
         self.denoiser.add_adapter(transformer_lora_config)
 
@@ -68,9 +87,6 @@ class FluxLightning(L.LightningModule):
         guidance: torch.Tensor = None,
         **kwargs,
     ):
-        print(latents.shape)
-        print(timestep.shape)
-        print(guidance.shape)
         noise_pred = self.denoiser(
             hidden_states=latents,
             timestep=timestep,
@@ -99,6 +115,23 @@ class FluxLightning(L.LightningModule):
         self.log(log, on_step=True, on_epoch=True)
         self.log("Mean loss", mean_loss, on_step=True, on_epoch=True)
         return mean_loss
+
+    def validation_step(self, batch, batch_idx):
+        feeds, targets, metadata = batch
+        prompt_embeds = feeds["prompt_embeds"][:1]
+        pooled_prompt_embeds = feeds["pooled_prompt_embeds"][:1]
+        width = 1024
+        height = 1024
+        steps = 25
+        image = self.pipeline(
+            prompt_embeds=prompt_embeds,
+            pooled_prompt_embeds=pooled_prompt_embeds,
+            height=height,
+            width=width,
+            num_inference_steps=steps,
+        )[0]
+        image = wandb.Image(image, caption="TODO: Add caption")
+        wandb.log({f"Validation {batch_idx} image": image})
 
     def configure_optimizers(self):
         params_to_optimize = list(
