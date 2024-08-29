@@ -131,7 +131,7 @@ class FluxLightning(L.LightningModule):
             height=height,
             width=width,
             num_inference_steps=steps,
-        )[0]
+        ).images[0]
         image = wandb.Image(image, caption="TODO: Add caption")
         wandb.log({f"Validation {batch_idx} image": image})
 
