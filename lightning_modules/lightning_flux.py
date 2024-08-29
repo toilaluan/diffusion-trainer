@@ -108,7 +108,7 @@ class FluxLightning(nn.Module):
     def training_step(self, batch, batch_idx):
         feeds, targets, metadata = batch
         for k, v in feeds.items():
-            feeds[k] = v.to(self.device)
+            feeds[k] = v.to(self.denoiser.device)
         noise_pred = self(**feeds)
         loss = self.loss_fn(noise_pred, targets)
         return loss
