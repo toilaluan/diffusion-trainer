@@ -41,8 +41,8 @@ class FluxLightning(L.LightningModule):
         flush()
         self.apply_lora()
         self.denoiser.enable_gradient_checkpointing()
-        self.print_trainable_parameters(self.denoiser)
         self.denoiser.train()
+        self.print_trainable_parameters(self.denoiser)
         self.pipeline = diffusers.FluxPipeline.from_pretrained(
             "black-forest-labs/FLUX.1-dev",
             torch_dtype=self.torch_dtype,
@@ -119,6 +119,7 @@ class FluxLightning(L.LightningModule):
         return mean_loss
 
     def validation_step(self, batch, batch_idx):
+        self.denoiser.eval()
         feeds, targets, metadata = batch
         prompt_embeds = feeds["prompt_embeds"][:1]
         pooled_prompt_embeds = feeds["pooled_prompt_embeds"][:1]
@@ -133,6 +134,7 @@ class FluxLightning(L.LightningModule):
             num_inference_steps=steps,
             generator=torch.Generator().manual_seed(42),
         ).images[0]
+        self.denoiser.train()
         image = wandb.Image(image, caption="TODO: Add caption")
         wandb.log({f"Validation {batch_idx} image": image})
 
