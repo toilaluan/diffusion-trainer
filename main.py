@@ -51,6 +51,7 @@ def parse_args():
     )
     parser.add_argument("--strategy", default="auto", help="Strategy")
     parser.add_argument("--devices", default=1)
+    parser.add_argument("--check_val_every_n_epoch", default=5)
 
     return parser.parse_args()
 
@@ -80,6 +81,7 @@ trainer = pl.Trainer(
     max_epochs=args.max_epochs,
     val_check_interval=args.val_check_interval,
     log_every_n_steps=args.log_every_n_steps,
+    check_val_every_n_epoch=args.check_val_every_n_epoch,
     logger=wandb_logger,
     strategy=args.strategy,
     devices=args.devices,

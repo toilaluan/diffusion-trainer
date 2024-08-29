@@ -122,9 +122,9 @@ class FluxLightning(L.LightningModule):
         feeds, targets, metadata = batch
         prompt_embeds = feeds["prompt_embeds"][:1]
         pooled_prompt_embeds = feeds["pooled_prompt_embeds"][:1]
-        width = 1024
+        width = 768
         height = 1024
-        steps = 25
+        steps = 20
         image = self.pipeline(
             prompt_embeds=prompt_embeds,
             pooled_prompt_embeds=pooled_prompt_embeds,
