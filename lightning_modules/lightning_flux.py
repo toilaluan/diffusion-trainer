@@ -102,7 +102,7 @@ class FluxLightning(L.LightningModule):
 
     def loss_fn(self, noise_pred, targets):
         loss = torch.nn.functional.mse_loss(noise_pred, targets, reduction="none")
-        loss = loss.mean(dim=(1, 2, 3))
+        loss = loss.mean(dim=(1, 2))
         return loss
 
     def training_step(self, batch, batch_idx):
@@ -111,9 +111,11 @@ class FluxLightning(L.LightningModule):
         loss = self.loss_fn(noise_pred, targets)
         mean_loss = loss.mean()
         steps = [item["step"] for item in metadata]
-        log = {f"Step {step} loss": step_loss for step, step_loss in zip(steps, loss)}
-        self.log(log, on_step=True, on_epoch=True)
-        self.log("Mean loss", mean_loss, on_step=True, on_epoch=True)
+        log = {
+            f"Timestep {step} loss": step_loss for step, step_loss in zip(steps, loss)
+        }
+        self.log_dict(log, on_step=True, on_epoch=True, prog_bar=False)
+        self.log("Mean loss", mean_loss, on_step=True, on_epoch=True, prog_bar=True)
         return mean_loss
 
     def validation_step(self, batch, batch_idx):

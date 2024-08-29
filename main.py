@@ -31,8 +31,8 @@ def parse_args():
         description="Script to run training with various options."
     )
 
-    parser.add_argument("--project", default="t5-reward", help="Wandb project name")
-    parser.add_argument("--batch_size", type=int, default=8, help="Batch size")
+    parser.add_argument("--project", default="finetune-flux", help="Wandb project name")
+    parser.add_argument("--batch_size", type=int, default=1, help="Batch size")
     parser.add_argument("--max_epochs", type=int, default=20, help="Max epochs")
     parser.add_argument(
         "--val_check_interval",
@@ -41,7 +41,7 @@ def parse_args():
         help="Validation check interval",
     )
     parser.add_argument(
-        "--log_every_n_steps", type=int, default=10, help="Log every n steps"
+        "--log_every_n_steps", type=int, default=1, help="Log every n steps"
     )
     parser.add_argument("--gpus", type=int, default=1, help="Number of GPUs")
     parser.add_argument("--precision", default="32", help="Precision")
@@ -85,4 +85,4 @@ trainer = pl.Trainer(
     devices=args.devices,
 )
 
-trainer.fit(model, train_dataloader)
+trainer.fit(model, train_dataloader, train_dataloader)
