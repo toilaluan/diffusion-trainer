@@ -37,7 +37,7 @@ def parse_args():
     parser.add_argument(
         "--val_check_interval",
         type=float,
-        default=1,
+        default=0.9,
         help="Validation check interval",
     )
     parser.add_argument(
@@ -83,6 +83,7 @@ trainer = pl.Trainer(
     logger=wandb_logger,
     strategy=args.strategy,
     devices=args.devices,
+    limit_val_batches=1,
 )
 
 trainer.fit(model, train_dataloader, train_dataloader)
