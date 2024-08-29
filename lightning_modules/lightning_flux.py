@@ -9,6 +9,7 @@ from optimum.quanto import freeze, qfloat8, quantize, qint4
 import bitsandbytes as bnb
 import gc
 import wandb
+from torch import nn
 
 
 def flush():
@@ -18,7 +19,7 @@ def flush():
     torch.cuda.reset_peak_memory_stats()
 
 
-class FluxLightning(L.LightningModule):
+class FluxLightning(nn.Module):
     def __init__(
         self,
         denoiser_pretrained_path: str,
