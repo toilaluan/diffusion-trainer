@@ -44,7 +44,7 @@ def parse_args():
         "--log_every_n_steps", type=int, default=1, help="Log every n steps"
     )
     parser.add_argument("--gpus", type=int, default=1, help="Number of GPUs")
-    parser.add_argument("--precision", default="32", help="Precision")
+    parser.add_argument("--precision", default="bf16", help="Precision")
     parser.add_argument("--accelerator", default="gpu", help="Accelerator")
     parser.add_argument(
         "--accumulate_grad_batches", type=int, default=1, help="Accumulate grad batches"
@@ -72,6 +72,9 @@ cached_dataset = CoreCachedDataset(cached_folder="debug/test_cache")
 train_dataloader = torch.utils.data.DataLoader(
     cached_dataset, batch_size=args.batch_size, shuffle=True, collate_fn=collate_fn
 )
+val_dataloader = torch.utils.data.DataLoader(
+    cached_dataset, batch_size=args.batch_size, shuffle=False, collate_fn=collate_fn
+)
 
 trainer = pl.Trainer(
     accelerator=args.accelerator,
@@ -87,4 +90,4 @@ trainer = pl.Trainer(
     limit_val_batches=1,
 )
 
-trainer.fit(model, train_dataloader, train_dataloader)
+trainer.fit(model, train_dataloader, val_dataloader)
