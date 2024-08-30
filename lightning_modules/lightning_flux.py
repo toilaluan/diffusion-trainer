@@ -35,7 +35,6 @@ class FluxLightning(nn.Module):
         self.pipeline = diffusers.FluxPipeline.from_pretrained(
             "black-forest-labs/FLUX.1-dev",
             torch_dtype=self.torch_dtype,
-            transformer=self.denoiser,
             text_encoder=None,
             text_encoder_2=None,
         )
