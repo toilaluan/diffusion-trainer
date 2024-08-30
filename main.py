@@ -51,6 +51,10 @@ optimizer = model.configure_optimizers()
 
 accelerator = accelerate.Accelerator()
 
+model, optimizer, train_dataloader, val_dataloader = accelerator.prepare(
+    model, optimizer, train_dataloader, val_dataloader
+)
+
 model.to(accelerator.device)
 model.pipeline.to(accelerator.device)
 
@@ -76,6 +80,7 @@ while total_steps > 0:
 
         if step % 50 == 0:
             print("Validating")
+            model = accelerator.unwrap_model(model)
             model.save_lora(lora_save_path)
             model.validation_step(val_batch, lora_save_path)
         wandb.log({"loss": loss})
