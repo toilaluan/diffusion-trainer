@@ -23,7 +23,7 @@ def parse_args():
         help="Validation check interval",
     )
     parser.add_argument("--gpus", type=int, default=1, help="Number of GPUs")
-    parser.add_argument("--precision", default="bf16", help="Precision")
+    parser.add_argument("--batch_size", default=1, help="Precision", type=int)
 
     return parser.parse_args()
 
