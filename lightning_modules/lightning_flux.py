@@ -31,18 +31,7 @@ class FluxLightning(nn.Module):
         self.learning_rate = learning_rate
         self.weight_decay = weight_decay
         self.torch_dtype = torch_dtype
-        self.denoiser = diffusers.FluxTransformer2DModel.from_pretrained(
-            denoiser_pretrained_path,
-            subfolder="transformer",
-            torch_dtype=torch_dtype,
-        )
-        self.denoiser.to("cuda")
-        quantize(self.denoiser, weights=qfloat8)
-        freeze(self.denoiser)
-        flush()
-        self.apply_lora()
-        self.denoiser.enable_gradient_checkpointing()
-        self.print_trainable_parameters(self.denoiser)
+
         self.pipeline = diffusers.FluxPipeline.from_pretrained(
             "black-forest-labs/FLUX.1-dev",
             torch_dtype=self.torch_dtype,
@@ -50,6 +39,11 @@ class FluxLightning(nn.Module):
             text_encoder=None,
             text_encoder_2=None,
         )
+        self.denoiser = self.pipeline.transformer
+        self.denoiser.to("cuda")
+        self.apply_lora()
+        self.denoiser.enable_gradient_checkpointing()
+        self.print_trainable_parameters(self.denoiser)
 
     @staticmethod
     def print_trainable_parameters(model):
@@ -66,14 +60,21 @@ class FluxLightning(nn.Module):
             f"trainable params: {trainable_params} || all params: {all_param} || trainable%: {100 * trainable_params / all_param}"
         )
 
-    def apply_lora(self):
+    @staticmethod
+    def apply_lora(
+        model,
+        rank=32,
+        alpha=32,
+        init_lora_weights="gaussian",
+        target_modules=["to_k", "to_q", "to_v", "to_out.0."],
+    ):
         transformer_lora_config = LoraConfig(
-            r=32,
-            lora_alpha=32,
-            init_lora_weights="gaussian",
-            target_modules=["to_k", "to_q", "to_v", "to_out.0."],
+            r=rank,
+            lora_alpha=alpha,
+            init_lora_weights=init_lora_weights,
+            target_modules=target_modules,
         )
-        self.denoiser.add_adapter(transformer_lora_config)
+        model.add_adapter(transformer_lora_config)
 
     def forward(
         self,
@@ -101,8 +102,7 @@ class FluxLightning(nn.Module):
         return noise_pred
 
     def loss_fn(self, noise_pred, targets):
-        loss = torch.nn.functional.mse_loss(noise_pred, targets, reduction="none")
-        loss = loss.mean()
+        loss = ((noise_pred - targets) ** 2).mean()
         return loss
 
     def training_step(self, batch, batch_idx):
@@ -113,6 +113,7 @@ class FluxLightning(nn.Module):
         loss = self.loss_fn(noise_pred, targets)
         return loss
 
+    @torch.no_grad()
     def validation_step(self, batch, batch_idx):
         feeds, targets, metadata = batch
         prompt_embeds = feeds["prompt_embeds"][:1]
