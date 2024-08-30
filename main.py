@@ -63,9 +63,9 @@ total_steps = len(train_dataloader) * args.max_epochs
 model.train()
 val_batch = next(iter(val_dataloader))
 
+step = 0
 
 while total_steps > 0:
-    step = 0
     for i, batch in enumerate(train_dataloader):
         optimizer.zero_grad()
         loss = model.training_step(batch, 0)
