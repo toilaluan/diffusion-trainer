@@ -73,8 +73,7 @@ while total_steps > 0:
         loss = model.training_step(batch, 0)
         loss.backward()
         optimizer.step()
-        if step % 10 == 0:
-            print(f"Step {step} Loss {loss}")
+        print(f"Step {step} Loss {loss}")
 
         if step % 20 == 0:
             print("Validating")
