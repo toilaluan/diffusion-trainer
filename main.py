@@ -71,7 +71,7 @@ while total_steps > 0:
     for i, batch in enumerate(train_dataloader):
         optimizer.zero_grad()
         loss = model.training_step(batch, 0)
-        loss.backward()
+        accelerator.backward(loss)
         optimizer.step()
         print(f"Step {step} Loss {loss}")
 
