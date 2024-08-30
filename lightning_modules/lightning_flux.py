@@ -141,3 +141,10 @@ class FluxLightning(nn.Module):
             weight_decay=self.weight_decay,
         )
         return optimizer
+
+    def save_lora(self, path: str):
+        transformer_lora_layers = get_peft_model_state_dict(self.denoiser)
+        diffusers.FluxPipeline.save_lora_weights(
+            save_directory=path,
+            transformer_lora_layers=transformer_lora_layers,
+        )
