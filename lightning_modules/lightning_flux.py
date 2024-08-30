@@ -130,7 +130,7 @@ class FluxLightning(nn.Module):
             generator=torch.Generator().manual_seed(42),
         ).images[0]
         image = wandb.Image(image, caption="TODO: Add caption")
-        wandb.log({f"Validation {batch_idx} image": image})
+        wandb.log({f"Validation image": image})
 
     def configure_optimizers(self):
         params_to_optimize = list(
