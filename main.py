@@ -76,7 +76,7 @@ while total_steps > 0:
         if step % 10 == 0:
             print(f"Step {step} Loss {loss}")
 
-        if step % 50 == 0:
+        if step % 20 == 0:
             print("Validating")
             model = accelerator.unwrap_model(model)
             model.save_lora(lora_save_path)
