@@ -73,8 +73,6 @@ while total_steps > 0:
         loss = model.training_step(batch, 0)
         loss.backward()
         optimizer.step()
-
-        step += 1
         if step % 10 == 0:
             print(f"Step {step} Loss {loss}")
 
@@ -84,4 +82,5 @@ while total_steps > 0:
             model.save_lora(lora_save_path)
             model.validation_step(val_batch, lora_save_path)
         wandb.log({"loss": loss})
+        step += 1
         total_steps -= 1
