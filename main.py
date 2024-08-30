@@ -54,16 +54,14 @@ accelerator = accelerate.Accelerator()
 model.to(accelerator.device)
 model.pipeline.to(accelerator.device)
 
-model, optimizer, train_dataloader, val_dataloader = accelerator.prepare(
-    model, optimizer, train_dataloader, val_dataloader
-)
-
 total_steps = len(train_dataloader) * args.max_epochs
 
 model.train()
 val_batch = next(iter(val_dataloader))
 
 step = 0
+
+lora_save_path = "lora_ckpt"
 
 while total_steps > 0:
     for i, batch in enumerate(train_dataloader):
@@ -78,6 +76,7 @@ while total_steps > 0:
 
         if step % 50 == 0:
             print("Validating")
-            model.validation_step(val_batch, 0)
+            model.save_lora(lora_save_path)
+            model.validation_step(val_batch, lora_save_path)
         wandb.log({"loss": loss})
         total_steps -= 1

@@ -113,7 +113,8 @@ class FluxLightning(nn.Module):
         return loss
 
     @torch.no_grad()
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch, lora_path):
+        self.pipeline.load_lora_weights(lora_path)
         feeds, targets, metadata = batch
         prompt_embeds = feeds["prompt_embeds"][:1]
         pooled_prompt_embeds = feeds["pooled_prompt_embeds"][:1]
