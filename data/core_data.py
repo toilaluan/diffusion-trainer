@@ -41,13 +41,13 @@ class CoreDataset(Dataset):
         for width in widths:
             for height in heights:
                 res = (width * height) ** 0.5
-                if not (base_res * 0.8 < res < base_res * 1.1):
+                if not (base_res * 0.8 < res < base_res * 1.25):
                     print(base_res, res)
                     continue
                 ratio = width / height
                 sizes[ratio] = (width, height)
         print(f"Initialized {len(sizes)} bucket sizes")
-        for k, v in sizes:
+        for k, v in sizes.items():
             print(f"Bucket ratio: {k} size: {v}")
         return sizes
 
