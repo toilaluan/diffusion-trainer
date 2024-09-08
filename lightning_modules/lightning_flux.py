@@ -134,7 +134,7 @@ class FluxLightning(L.LightningModule):
         width = 768
         height = 1024
         steps = 20
-        image = self.pipeline(
+        image = pipeline(
             prompt_embeds=prompt_embeds,
             pooled_prompt_embeds=pooled_prompt_embeds,
             height=height,
