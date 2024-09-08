@@ -110,7 +110,7 @@ class FluxLightning(L.LightningModule):
 
     def on_validation_start(self) -> None:
         super().on_validation_start()
-        if self.current_epoch % 50 == 0:
+        if self.current_epoch % 40 == 0:
             self.save_lora(f"lora_weights_epoch_{self.current_epoch}.pt")
 
     def validation_step(self, batch, batch_idx):
