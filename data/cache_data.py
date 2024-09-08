@@ -122,3 +122,7 @@ if __name__ == "__main__":
         feeds = torch.load("data/cache/image.pt")
         image = cache_flux.decode_from_latent(feeds["latents"], height, width)
         image.save("debug/image_2_reconstructed.jpg")
+
+        for i, (image, caption) in enumerate(dataset):
+            cache_flux(image, caption, filename=f"image_{i}")
+        print("Done")
