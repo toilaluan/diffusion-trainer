@@ -7,7 +7,6 @@ from lightning.pytorch.loggers import WandbLogger
 from pytorch_lightning.callbacks import Callback, ModelCheckpoint, LearningRateMonitor
 import wandb
 import accelerate
-import diffusers
 
 
 def parse_args():
@@ -33,20 +32,11 @@ args = parse_args()
 
 wandb.init(project=args.project)
 
-# model = FluxLightning(
-#     denoiser_pretrained_path="black-forest-labs/FLUX.1-dev",
-#     learning_rate=1e-5,
-#     weight_decay=1e-8,
-# )
-
-transformer = diffusers.FluxTransformer2DModel.from_pretrained(
-    "black-forest-labs/FLUX.1-dev",
-    torch_dtype=torch.bfloat16,
-    subfolder="transformer",
+model = FluxLightning(
+    denoiser_pretrained_path="black-forest-labs/FLUX.1-dev",
+    learning_rate=1e-5,
+    weight_decay=1e-8,
 )
-
-FluxLightning.apply_lora(transformer)
-FluxLightning.print_trainable_parameters(transformer)
 
 cached_dataset = CoreCachedDataset(cached_folder="debug/test_cache")
 
@@ -57,45 +47,35 @@ val_dataloader = torch.utils.data.DataLoader(
     cached_dataset, batch_size=1, shuffle=False, collate_fn=collate_fn
 )
 
-optimizer = torch.optim.AdamW(transformer.parameters(), lr=1e-5, weight_decay=1e-8)
+optimizer = model.configure_optimizers()
 
 accelerator = accelerate.Accelerator()
 
-transformer, optimizer, train_dataloader, val_dataloader = accelerator.prepare(
-    transformer, optimizer, train_dataloader, val_dataloader
+model, optimizer, train_dataloader, val_dataloader = accelerator.prepare(
+    model, optimizer, train_dataloader, val_dataloader
 )
 
-transformer.to(accelerator.device)
-transformer.train()
+model.to(accelerator.device)
+model.pipeline.to(accelerator.device)
 
 total_steps = len(train_dataloader) * args.max_epochs
+
+model.train()
 val_batch = next(iter(val_dataloader))
 
 step = 0
 
 lora_save_path = "lora_ckpt"
 
-
-def loss_fn(pred, target):
-    return torch.nn.functional.mse_loss(pred.float(), target.float(), reduction="mean")
-
-
 while total_steps > 0:
     for i, batch in enumerate(train_dataloader):
         feeds, targets, metadata = batch
         for k, v in feeds.items():
-            feeds[k] = v.to(accelerator.device)
-        noise_pred = transformer(
-            hidden_states=feeds["latents"],
-            timestep=feeds["timestep"],
-            pooled_projections=feeds["pooled_prompt_embeds"],
-            encoder_hidden_states=feeds["prompt_embeds"],
-            txt_ids=feeds["text_ids"],
-            img_ids=feeds["latent_image_ids"],
-            guidance=feeds["guidance"],
-            return_dict=False,
-        )[0]
-        loss = loss_fn(noise_pred, targets)
+            feeds[k] = v.to(model.denoiser.device)
+        noise_pred = model(**feeds)
+        loss = torch.nn.functional.mse_loss(
+            noise_pred.float(), targets.float(), reduction="mean"
+        )
         print(f"Step {step} Loss {loss}")
 
         # if step % 20 == 0:
