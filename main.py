@@ -51,7 +51,7 @@ def parse_args():
     )
     parser.add_argument("--strategy", default="auto", help="Strategy")
     parser.add_argument("--devices", default=1)
-    parser.add_argument("--check_val_every_n_epoch", default=5, type=int)
+    parser.add_argument("--check_val_every_n_epoch", default=1, type=int)
 
     return parser.parse_args()
 
