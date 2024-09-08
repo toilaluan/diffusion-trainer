@@ -67,7 +67,7 @@ model = FluxLightning(
 )
 model.to("cuda")
 
-cached_dataset = CoreCachedDataset(cached_folder="debug/test_cache")
+cached_dataset = CoreCachedDataset(cached_folder="debug/cache")
 
 train_dataloader = torch.utils.data.DataLoader(
     cached_dataset, batch_size=args.batch_size, shuffle=True, collate_fn=collate_fn
