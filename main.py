@@ -69,7 +69,11 @@ lora_save_path = "lora_ckpt"
 
 while total_steps > 0:
     for i, batch in enumerate(train_dataloader):
-        loss = model.training_step(batch, 0)
+        feeds, targets, metadata = batch
+        for k, v in feeds.items():
+            feeds[k] = v.to(model.denoiser.device)
+        noise_pred = model(**feeds)
+        loss = model.loss_fn(noise_pred, targets)
         print(f"Step {step} Loss {loss}")
 
         if step % 20 == 0:
