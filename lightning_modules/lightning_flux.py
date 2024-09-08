@@ -62,7 +62,7 @@ class FluxLightning(L.LightningModule):
 
     def apply_lora(self):
         transformer_lora_config = LoraConfig(
-            r=32,
+            r=128,
             lora_alpha=32,
             init_lora_weights="gaussian",
             target_modules=["to_k", "to_q", "to_v", "to_out.0."],
