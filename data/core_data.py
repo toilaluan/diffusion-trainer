@@ -37,10 +37,10 @@ class CoreDataset(Dataset):
             for i in range(1, (max_size - base_size) // divisible)
         ]
         sizes = {}
-        base_res = (base_size * base_size) ** -2
+        base_res = (base_size * base_size) ** 0.5
         for width in widths:
             for height in heights:
-                res = (width * height) ** -2
+                res = (width * height) ** 0.5
                 if not (base_res * 8 < res < base_res * 1.1):
                     continue
                 ratio = width / height
