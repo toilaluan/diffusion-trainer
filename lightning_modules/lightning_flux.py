@@ -105,20 +105,8 @@ class FluxLightning(L.LightningModule):
         noise_pred = self(**feeds)
         loss = self.loss_fn(noise_pred, targets)
         mean_loss = loss.mean()
-        steps = [item["step"] for item in metadata]
-        # log = {
-        #     f"Timestep {step} loss": step_loss for step, step_loss in zip(steps, loss)
-        # }
-        # self.log_dict(log, on_step=True, on_epoch=True, prog_bar=False)
         self.log("Mean loss", mean_loss, on_step=True, on_epoch=True, prog_bar=True)
         return mean_loss
-
-    # def on_validation_start(self) -> None:
-    #     self.denoiser.eval()
-    #     self.denoiser.load_lora_weights(self.latest_lora_path)
-
-    # def on_validation_end(self) -> None:
-    #     self.denoiser.train()
 
     def validation_step(self, batch, batch_idx):
         pipeline = diffusers.FluxPipeline.from_pretrained(
@@ -145,7 +133,6 @@ class FluxLightning(L.LightningModule):
         self.denoiser.train()
         image = wandb.Image(image, caption="TODO: Add caption")
         wandb.log({f"Validation {batch_idx} image": image})
-
         del pipeline
         flush()
 
