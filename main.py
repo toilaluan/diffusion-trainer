@@ -94,7 +94,7 @@ while total_steps > 0:
             img_ids=feeds["latent_image_ids"],
             guidance=feeds["guidance"],
             return_dict=False,
-        )
+        )[0]
         loss = loss_fn(noise_pred, targets)
         print(f"Step {step} Loss {loss}")
 
