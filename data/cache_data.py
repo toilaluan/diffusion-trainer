@@ -115,13 +115,13 @@ if __name__ == "__main__":
             root_folder="dataset/itay_test/images",
             metadata_file="dataset/itay_test/metadata.json",
         )
-        image, caption = dataset[0]
-        height, width = image.size
-        image.save("debug/image_2.jpg")
-        cache_flux(image, caption, "image")
-        feeds = torch.load("data/cache/image.pt")
-        image = cache_flux.decode_from_latent(feeds["latents"], height, width)
-        image.save("debug/image_2_reconstructed.jpg")
+        # image, caption = dataset[0]
+        # height, width = image.size
+        # image.save("debug/image_2.jpg")
+        # cache_flux(image, caption, "image")
+        # feeds = torch.load("data/cache/image.pt")
+        # image = cache_flux.decode_from_latent(feeds["latents"], height, width)
+        # image.save("debug/image_2_reconstructed.jpg")
 
         for i, (image, caption) in enumerate(dataset):
             cache_flux(image, caption, filename=f"image_{i}")
