@@ -70,31 +70,35 @@ class CacheFlux:
         height = 2 * (int(height) // self.vae_scale_factor)
         width = 2 * (int(width) // self.vae_scale_factor)
         print(height, width)
-        latents = self.pipeline._pack_latents(
+        packed_latents = self.pipeline._pack_latents(
             latents,
-            batch_size=1,
-            num_channels_latents=num_channels_latents,
-            height=height,
-            width=width,
+            batch_size=latents.shape[0],
+            num_channels_latents=latents.shape[1],
+            height=latents.shape[2],
+            width=latents.shape[3],
         )
-        assert latents.shape == noise_latents.shape
+        assert packed_latents.shape == noise_latents.shape
         guidance = (
             torch.tensor([self.guidance_scale]).to(self.torch_dtype).to(self.device)
         )
 
         feeds = {
-            "latents": latents.to(self.torch_dtype).cpu(),
+            "latents": packed_latents.to(self.torch_dtype).cpu(),
             "pooled_prompt_embeds": pooled_prompt_embeds.to(self.torch_dtype).cpu(),
             "prompt_embeds": prompt_embeds.to(self.torch_dtype).cpu(),
             "text_ids": text_ids.to(self.torch_dtype).cpu(),
             "latent_image_ids": latent_image_ids.to(self.torch_dtype).cpu(),
             "guidance": guidance.to(self.torch_dtype).cpu(),
+            "vae_latents": latents.to(self.torch_dtype).cpu(),
         }
 
         torch.save(feeds, os.path.join(self.save_dir, f"{filename}.pt"))
 
     @torch.no_grad()
     def decode_from_latent(self, latents: torch.Tensor, height, width):
+        height = int(height * self.vae_scale_factor / 2)
+        width = int(width * self.vae_scale_factor / 2)
+        print(latents.shape)
         latents = self.pipeline._unpack_latents(
             latents, height, width, self.vae_scale_factor
         )
@@ -116,13 +120,17 @@ if __name__ == "__main__":
             metadata_file="dataset/itay_test/metadata.json",
         )
         image, caption = dataset[0]
-        height, width = image.size
+
         image.save("debug/image_2.jpg")
         cache_flux(image, caption, "image")
-        feeds = torch.load("data/cache/image.pt")
-        image = cache_flux.decode_from_latent(feeds["latents"], height, width)
+        feeds = torch.load("debug/cache/image.pt")
+        vae_output = feeds["vae_latents"]
+        print(vae_output.shape)
+        image = cache_flux.decode_from_latent(
+            feeds["latents"], vae_output.shape[2], vae_output.shape[3]
+        )
         image.save("debug/image_2_reconstructed.jpg")
 
-        # for i, (image, caption) in enumerate(dataset):
-        #     cache_flux(image, caption, filename=f"image_{i}")
-        # print("Done")
+        for i, (image, caption) in enumerate(dataset):
+            cache_flux(image, caption, filename=f"image_{i}")
+        print("Done")
