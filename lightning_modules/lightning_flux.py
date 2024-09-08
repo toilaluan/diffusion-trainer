@@ -43,13 +43,7 @@ class FluxLightning(L.LightningModule):
         self.denoiser.enable_gradient_checkpointing()
         self.denoiser.train()
         self.print_trainable_parameters(self.denoiser)
-        self.pipeline = diffusers.FluxPipeline.from_pretrained(
-            "black-forest-labs/FLUX.1-dev",
-            torch_dtype=self.torch_dtype,
-            transformer=self.denoiser,
-            text_encoder=None,
-            text_encoder_2=None,
-        ).to("cuda")
+        self.latest_lora_path = None
 
     @staticmethod
     def print_trainable_parameters(model):
@@ -119,8 +113,21 @@ class FluxLightning(L.LightningModule):
         self.log("Mean loss", mean_loss, on_step=True, on_epoch=True, prog_bar=True)
         return mean_loss
 
+    # def on_validation_start(self) -> None:
+    #     self.denoiser.eval()
+    #     self.denoiser.load_lora_weights(self.latest_lora_path)
+
+    # def on_validation_end(self) -> None:
+    #     self.denoiser.train()
+
     def validation_step(self, batch, batch_idx):
-        self.denoiser.eval()
+        pipeline = diffusers.FluxPipeline.from_pretrained(
+            "black-forest-labs/FLUX.1-dev",
+            torch_dtype=self.torch_dtype,
+            transformer=self.denoiser,
+            text_encoder=None,
+            text_encoder_2=None,
+        ).to("cuda")
         feeds, targets, metadata = batch
         prompt_embeds = feeds["prompt_embeds"][:1]
         pooled_prompt_embeds = feeds["pooled_prompt_embeds"][:1]
@@ -138,6 +145,17 @@ class FluxLightning(L.LightningModule):
         self.denoiser.train()
         image = wandb.Image(image, caption="TODO: Add caption")
         wandb.log({f"Validation {batch_idx} image": image})
+
+        del pipeline
+        flush()
+
+    def save_lora(self, path: str):
+        transformer_lora_layers = get_peft_model_state_dict(self.denoiser)
+        diffusers.FluxPipeline.save_lora_weights(
+            save_directory=path,
+            transformer_lora_layers=transformer_lora_layers,
+        )
+        self.latest_lora_path = path
 
     def configure_optimizers(self):
         params_to_optimize = list(
