@@ -61,16 +61,14 @@ optimizer = torch.optim.AdamW(transformer.parameters(), lr=1e-5, weight_decay=1e
 
 accelerator = accelerate.Accelerator()
 
-model, optimizer, train_dataloader, val_dataloader = accelerator.prepare(
+transformer, optimizer, train_dataloader, val_dataloader = accelerator.prepare(
     transformer, optimizer, train_dataloader, val_dataloader
 )
 
-model.to(accelerator.device)
-model.pipeline.to(accelerator.device)
+transformer.to(accelerator.device)
+transformer.train()
 
 total_steps = len(train_dataloader) * args.max_epochs
-
-model.train()
 val_batch = next(iter(val_dataloader))
 
 step = 0
@@ -86,7 +84,7 @@ while total_steps > 0:
     for i, batch in enumerate(train_dataloader):
         feeds, targets, metadata = batch
         for k, v in feeds.items():
-            feeds[k] = v.to(model.denoiser.device)
+            feeds[k] = v.to(accelerator.device)
         noise_pred = transformer(**feeds)
         loss = loss_fn(noise_pred, targets)
         print(f"Step {step} Loss {loss}")
