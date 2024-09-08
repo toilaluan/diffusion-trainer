@@ -108,6 +108,11 @@ class FluxLightning(L.LightningModule):
         self.log("Mean loss", mean_loss, on_step=True, on_epoch=True, prog_bar=True)
         return mean_loss
 
+    def on_validation_start(self) -> None:
+        super().on_validation_start()
+        if self.current_epoch % 50 == 0:
+            self.save_lora(f"lora_weights_epoch_{self.current_epoch}.pt")
+
     def validation_step(self, batch, batch_idx):
         pipeline = diffusers.FluxPipeline.from_pretrained(
             "black-forest-labs/FLUX.1-dev",
