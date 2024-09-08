@@ -85,7 +85,16 @@ while total_steps > 0:
         feeds, targets, metadata = batch
         for k, v in feeds.items():
             feeds[k] = v.to(accelerator.device)
-        noise_pred = transformer(**feeds)
+        noise_pred = transformer(
+            hidden_states=feeds["latents"],
+            timestep=feeds["timestep"],
+            pooled_projections=feeds["pooled_prompt_embeds"],
+            encoder_hidden_states=feeds["prompt_embeds"],
+            txt_ids=feeds["text_ids"],
+            img_ids=feeds["latent_image_ids"],
+            guidance=feeds["guidance"],
+            return_dict=False,
+        )
         loss = loss_fn(noise_pred, targets)
         print(f"Step {step} Loss {loss}")
 
