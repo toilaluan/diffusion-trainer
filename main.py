@@ -69,10 +69,7 @@ lora_save_path = "lora_ckpt"
 
 while total_steps > 0:
     for i, batch in enumerate(train_dataloader):
-        optimizer.zero_grad()
         loss = model.training_step(batch, 0)
-        accelerator.backward(loss)
-        optimizer.step()
         print(f"Step {step} Loss {loss}")
 
         if step % 20 == 0:
@@ -83,3 +80,6 @@ while total_steps > 0:
         wandb.log({"loss": loss})
         step += 1
         total_steps -= 1
+        accelerator.backward(loss)
+        optimizer.step()
+        optimizer.zero_grad()
