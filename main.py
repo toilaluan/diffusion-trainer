@@ -7,6 +7,7 @@ from lightning.pytorch.loggers import WandbLogger
 from pytorch_lightning.callbacks import Callback, ModelCheckpoint, LearningRateMonitor
 import wandb
 import accelerate
+import diffusers
 
 
 def parse_args():
@@ -32,11 +33,20 @@ args = parse_args()
 
 wandb.init(project=args.project)
 
-model = FluxLightning(
-    denoiser_pretrained_path="black-forest-labs/FLUX.1-dev",
-    learning_rate=1e-5,
-    weight_decay=1e-8,
+# model = FluxLightning(
+#     denoiser_pretrained_path="black-forest-labs/FLUX.1-dev",
+#     learning_rate=1e-5,
+#     weight_decay=1e-8,
+# )
+
+transformer = diffusers.FluxTransformer2DModel.from_pretrained(
+    "black-forest-labs/FLUX.1-dev",
+    torch_dtype=torch.bfloat16,
+    subfolder="transformer",
 )
+
+FluxLightning.apply_lora(transformer)
+FluxLightning.print_trainable_parameters(transformer)
 
 cached_dataset = CoreCachedDataset(cached_folder="debug/test_cache")
 
@@ -47,12 +57,12 @@ val_dataloader = torch.utils.data.DataLoader(
     cached_dataset, batch_size=1, shuffle=False, collate_fn=collate_fn
 )
 
-optimizer = model.configure_optimizers()
+optimizer = torch.optim.AdamW(transformer.parameters(), lr=1e-5, weight_decay=1e-8)
 
 accelerator = accelerate.Accelerator()
 
 model, optimizer, train_dataloader, val_dataloader = accelerator.prepare(
-    model, optimizer, train_dataloader, val_dataloader
+    transformer, optimizer, train_dataloader, val_dataloader
 )
 
 model.to(accelerator.device)
@@ -67,21 +77,26 @@ step = 0
 
 lora_save_path = "lora_ckpt"
 
+
+def loss_fn(pred, target):
+    return torch.nn.functional.mse_loss(pred.float(), target.float(), reduction="mean")
+
+
 while total_steps > 0:
     for i, batch in enumerate(train_dataloader):
         feeds, targets, metadata = batch
         for k, v in feeds.items():
             feeds[k] = v.to(model.denoiser.device)
-        noise_pred = model(**feeds)
-        loss = model.loss_fn(noise_pred, targets)
+        noise_pred = transformer(**feeds)
+        loss = loss_fn(noise_pred, targets)
         print(f"Step {step} Loss {loss}")
 
-        if step % 20 == 0:
-            print("Validating")
-            model = accelerator.unwrap_model(model)
-            model.save_lora(lora_save_path)
-            model.validation_step(val_batch, lora_save_path)
-        wandb.log({"loss": loss})
+        # if step % 20 == 0:
+        #     print("Validating")
+        #     model = accelerator.unwrap_model(model)
+        #     model.save_lora(lora_save_path)
+        #     model.validation_step(val_batch, lora_save_path)
+        # wandb.log({"loss": loss})
         step += 1
         total_steps -= 1
         accelerator.backward(loss)
