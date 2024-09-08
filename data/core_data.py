@@ -41,7 +41,7 @@ class CoreDataset(Dataset):
         for width in widths:
             for height in heights:
                 res = (width * height) ** 0.5
-                if not (base_res * 8 < res < base_res * 1.1):
+                if not (base_res * 0.8 < res < base_res * 1.1):
                     print(base_res, res)
                     continue
                 ratio = width / height
