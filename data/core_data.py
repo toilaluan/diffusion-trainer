@@ -79,7 +79,8 @@ class CoreCachedDataset(Dataset):
         return len(self.cached_files)
 
     def add_noise(self, latent: torch.Tensor, dtype: torch.dtype):
-        sigma = random.random()
+        timestep = random.randint(0, self.max_step)
+        sigma = timestep / self.max_step
         noise = torch.randn_like(latent).to(dtype)
         noised_latent = (1 - sigma) * latent + sigma * noise
         return noised_latent, sigma, noise
