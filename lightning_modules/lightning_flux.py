@@ -36,9 +36,9 @@ class FluxLightning(L.LightningModule):
             torch_dtype=torch_dtype,
         )
         self.denoiser.to("cuda")
-        quantize(self.denoiser, weights=qfloat8)
-        freeze(self.denoiser)
-        flush()
+        # quantize(self.denoiser, weights=qfloat8)
+        # freeze(self.denoiser)
+        # flush()
         self.apply_lora()
         self.denoiser.enable_gradient_checkpointing()
         self.denoiser.train()
@@ -62,9 +62,9 @@ class FluxLightning(L.LightningModule):
 
     def apply_lora(self):
         transformer_lora_config = LoraConfig(
-            r=128,
-            lora_alpha=32,
-            init_lora_weights="gaussian",
+            r=16,
+            lora_alpha=16,
+            init_lora_weights=False,
             target_modules=["to_k", "to_q", "to_v", "to_out.0."],
         )
         self.denoiser.add_adapter(transformer_lora_config)
@@ -124,9 +124,9 @@ class FluxLightning(L.LightningModule):
         feeds, targets, metadata = batch
         prompt_embeds = feeds["prompt_embeds"][:1]
         pooled_prompt_embeds = feeds["pooled_prompt_embeds"][:1]
-        width = 768
+        width = 1024
         height = 1024
-        steps = 20
+        steps = 30
         image = pipeline(
             prompt_embeds=prompt_embeds,
             pooled_prompt_embeds=pooled_prompt_embeds,
@@ -138,8 +138,6 @@ class FluxLightning(L.LightningModule):
         self.denoiser.train()
         image = wandb.Image(image, caption="TODO: Add caption")
         wandb.log({f"Validation {batch_idx} image": image})
-        del pipeline
-        flush()
 
     def save_lora(self, path: str):
         transformer_lora_layers = get_peft_model_state_dict(self.denoiser)
