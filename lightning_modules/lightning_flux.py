@@ -134,6 +134,7 @@ class FluxLightning(L.LightningModule):
             width=width,
             num_inference_steps=steps,
             generator=torch.Generator().manual_seed(42),
+            guidance_scale=3.5,
         ).images[0]
         self.denoiser.train()
         image = wandb.Image(image, caption="TODO: Add caption")
@@ -151,7 +152,7 @@ class FluxLightning(L.LightningModule):
         params_to_optimize = list(
             filter(lambda p: p.requires_grad, self.denoiser.parameters())
         )
-        optimizer = schedulefree.AdamWScheduleFree(
+        optimizer = torch.optim.AdamW(
             params_to_optimize,
             lr=self.learning_rate,
             weight_decay=self.weight_decay,
