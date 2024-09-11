@@ -52,6 +52,7 @@ def parse_args():
     parser.add_argument("--strategy", default="auto", help="Strategy")
     parser.add_argument("--devices", default=1)
     parser.add_argument("--check_val_every_n_epoch", default=1, type=int)
+    parser.add_argument("--cache_dir", default="debug/cache_tshirt", type=str)
 
     return parser.parse_args()
 
@@ -67,7 +68,7 @@ model = FluxLightning(
 )
 model.to("cuda")
 
-cached_dataset = CoreCachedDataset(cached_folder="debug/cache")
+cached_dataset = CoreCachedDataset(cached_folder=args.cache_dir)
 
 train_dataloader = torch.utils.data.DataLoader(
     cached_dataset, batch_size=args.batch_size, shuffle=True, collate_fn=collate_fn

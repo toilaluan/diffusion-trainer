@@ -116,7 +116,7 @@ if __name__ == "__main__":
     from data.core_data import CoreCachedDataset
 
     with torch.no_grad():
-        cache_flux = CacheFlux(save_dir="debug/tshirt")
+        cache_flux = CacheFlux(save_dir="debug/cache_tshirt")
         dataset = CoreDataset(
             root_folder="dataset/tshirt/images",
             metadata_file="dataset/tshirt/metadata.json",
