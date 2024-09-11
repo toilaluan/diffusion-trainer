@@ -62,8 +62,8 @@ wandb_logger = WandbLogger(project="flux-lora")
 
 model = FluxLightning(
     denoiser_pretrained_path="black-forest-labs/FLUX.1-dev",
-    learning_rate=1e-1,
-    weight_decay=1e-9,
+    learning_rate=1e-4,
+    weight_decay=1e-8,
 )
 model.to("cuda")
 
