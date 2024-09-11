@@ -19,7 +19,7 @@ class CoreDataset(Dataset):
         self,
         base_size: int = 1024,
         min_size: int = 512,
-        max_size: int = 1536,
+        max_size: int = 1256,
         divisible: int = 32,
     ):
         widths = [
