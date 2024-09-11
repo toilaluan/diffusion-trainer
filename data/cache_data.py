@@ -113,23 +113,32 @@ class CacheFlux:
 
 
 if __name__ == "__main__":
+    from data.core_data import CoreCachedDataset
+
     with torch.no_grad():
         cache_flux = CacheFlux(save_dir="debug/cache")
-        dataset = CoreDataset(
-            root_folder="dataset/itay_test/images",
-            metadata_file="dataset/itay_test/metadata.json",
+        dataset = CoreCachedDataset(
+            root_folder="dataset/tshirt/images",
+            metadata_file="dataset/tshirt/metadata.json",
         )
         image, caption = dataset[0]
 
-        image.save("debug/image_2.jpg")
+        image.save("debug/image.jpg")
         cache_flux(image, caption, "image")
-        feeds = torch.load("debug/cache/image.pt")
+        feeds = torch.load("debug/cache_tshirt/image.pt")
         vae_output = feeds["vae_latents"]
         print(vae_output.shape)
         image = cache_flux.decode_from_latent(
             feeds["latents"], vae_output.shape[2], vae_output.shape[3]
         )
-        image.save("debug/image_2_reconstructed.jpg")
+        image.save("debug/image_reconstructed.jpg")
+
+        cached_dataset = CoreCachedDataset(cached_folder="debug/cache_tshirt")
+        noised_latent = cached_dataset.get_noised_latent(0, 0.5)
+        image = cache_flux.decode_from_latent(
+            noised_latent, vae_output.shape[2], vae_output.shape[3]
+        )
+        image.save("debug/image_noised.jpg")
 
         for i, (image, caption) in enumerate(dataset):
             cache_flux(image, caption, filename=f"image_{i}")

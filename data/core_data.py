@@ -101,6 +101,15 @@ class CoreCachedDataset(Dataset):
 
         return feeds, target, metadata
 
+    def get_noised_latent(self, idx, sigma):
+        cached_file = self.cached_files[idx]
+        feeds = torch.load(cached_file)
+        latent = feeds["latents"]
+        dtype = latent.dtype
+        noise = torch.randn_like(latent).to(dtype)
+        noised_latent = (1 - sigma) * latent + sigma * noise
+        return noised_latent
+
 
 def collate_fn(batch):
     feeds, targets, metadata = zip(*batch)
