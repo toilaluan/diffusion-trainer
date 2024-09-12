@@ -97,7 +97,7 @@ class CacheFlux:
     @torch.no_grad()
     def decode_from_latent(self, latents: torch.Tensor, width, height):
         latents = self.pipeline._unpack_latents(
-            latents, self.vae_scale_factor, height=height, width=width
+            latents, height, width, self.vae_scale_factor
         )
         latents = latents.to(self.device)
         latents = (
