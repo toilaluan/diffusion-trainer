@@ -7,6 +7,7 @@ import random
 import os
 from PIL import Image
 import math
+import diffusers
 
 
 def calculate_shift(
@@ -88,20 +89,26 @@ class CoreCachedDataset(Dataset):
         self.cached_files = glob.glob(f"{cached_folder}/*.pt")
         self.max_len = max_len
         self.max_step = 1000
+        self.pipeline = diffusers.FluxPipeline.from_pretrained(
+            "black-forest-labs/FLUX.1-dev",
+            transformer=None,
+            text_encoder=None,
+            text_encoder_2=None,
+        )
 
     def __len__(self):
         return len(self.cached_files)
 
     def add_noise(self, latent: torch.Tensor, dtype: torch.dtype):
-        # if random.random() < 0.25:
-        #     timestep = random.randint(250, self.max_step)
-        # else:
-        #     timestep = random.randint(1, 250)
-        # sigma = timestep / self.max_step
-        mu = calculate_shift(latent.shape[1])
-        sigma = torch.randn(1).sigmoid().item()
-        shift = math.exp(mu)
-        sigma = (sigma * shift) / (1 + (shift - 1) * sigma)
+        if random.random() < 0.25:
+            timestep = random.randint(250, self.max_step)
+        else:
+            timestep = random.randint(1, 250)
+        sigma = timestep / self.max_step
+        # mu = calculate_shift((latent.shape[2] * latent.shape[3]))
+        # sigma = torch.randn(1).sigmoid().item()
+        # shift = math.exp(mu)
+        # sigma = (sigma * shift) / (1 + (shift - 1) * sigma)
         noise = torch.randn_like(latent).to(dtype)
         noised_latent = (1 - sigma) * latent + sigma * noise
         return noised_latent, sigma, noise
@@ -109,11 +116,18 @@ class CoreCachedDataset(Dataset):
     def __getitem__(self, index):
         cached_file = self.cached_files[index]
         feeds = torch.load(cached_file)
-        latent = feeds["latents"]
+        latent = feeds["vae_latents"]
         dtype = latent.dtype
         noised_latent, sigma, noise = self.add_noise(latent, dtype)
+        packed_latent = self.pipeline.pack_latents(
+            noised_latent,
+            batch_size=noised_latent.shape[0],
+            num_channels_latents=noised_latent.shape[1],
+            height=noised_latent.shape[2],
+            width=noised_latent.shape[3],
+        )
         feeds["timestep"] = torch.Tensor([sigma])
-        feeds["latents"] = noised_latent
+        feeds["latents"] = packed_latent
         step = int(sigma * self.max_step)
         target = noise - latent
         metadata = {

@@ -44,6 +44,13 @@ class FluxLightning(L.LightningModule):
         self.denoiser.train()
         self.print_trainable_parameters(self.denoiser)
         self.latest_lora_path = None
+        self.pipeline = diffusers.FluxPipeline.from_pretrained(
+            "black-forest-labs/FLUX.1-dev",
+            torch_dtype=self.torch_dtype,
+            transformer=self.denoiser,
+            text_encoder=None,
+            text_encoder_2=None,
+        ).to("cuda")
 
     @staticmethod
     def print_trainable_parameters(model):
@@ -95,9 +102,16 @@ class FluxLightning(L.LightningModule):
         return noise_pred
 
     def loss_fn(self, noise_pred, targets):
-        loss = torch.nn.functional.mse_loss(
-            noise_pred.float(), targets.float(), reduction="mean"
+        noise_pred = self.pipeline._unpack_latents(
+            noise_pred,
+            height=targets.shape[2] * 8,
+            width=targets.shape[3] * 8,
+            vae_scale_factor=16,
         )
+        loss = torch.mean(
+            ((noise_pred.float() - targets.float()) ** 2).reshape(targets.shape[0], -1),
+            1,
+        ).mean()
         return loss
 
     def training_step(self, batch, batch_idx):
@@ -114,20 +128,13 @@ class FluxLightning(L.LightningModule):
             self.save_lora(f"lora_weights_epoch_{self.current_epoch}.pt")
 
     def validation_step(self, batch, batch_idx):
-        pipeline = diffusers.FluxPipeline.from_pretrained(
-            "black-forest-labs/FLUX.1-dev",
-            torch_dtype=self.torch_dtype,
-            transformer=self.denoiser,
-            text_encoder=None,
-            text_encoder_2=None,
-        ).to("cuda")
         feeds, targets, metadata = batch
         prompt_embeds = feeds["prompt_embeds"][:1]
         pooled_prompt_embeds = feeds["pooled_prompt_embeds"][:1]
         width = 1024
         height = 1024
         steps = 30
-        image = pipeline(
+        image = self.pipeline(
             prompt_embeds=prompt_embeds,
             pooled_prompt_embeds=pooled_prompt_embeds,
             height=height,
