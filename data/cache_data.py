@@ -176,8 +176,8 @@ if __name__ == "__main__":
         num_inferece_steps = 30
         dt = 1 / num_inferece_steps
         denoise_images = []
-        # noised_latent = noised_latent.cuda()
-        noised_latent = torch.randn_like(noised_latent).cuda()
+        noised_latent = noised_latent.cuda()
+        # noised_latent = torch.randn_like(noised_latent).cuda()
 
         def time_shift(mu: float, sigma: float, t: torch.Tensor):
             return math.exp(mu) / (math.exp(mu) + (1 / t - 1) ** sigma)
