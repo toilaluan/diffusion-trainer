@@ -115,6 +115,7 @@ if __name__ == "__main__":
     from data.core_data import CoreCachedDataset
     import diffusers
     import argparse
+    import math
 
     parser = argparse.ArgumentParser(
         description="Script to run training with various options."
@@ -184,12 +185,35 @@ if __name__ == "__main__":
         denoise_images = []
         # noised_latent = noised_latent.cuda()
         noised_latent = torch.randn_like(noised_latent).cuda()
-        for i in range(num_inferece_steps):
+
+        def time_shift(mu: float, sigma: float, t: torch.Tensor):
+            return math.exp(mu) / (math.exp(mu) + (1 / t - 1) ** sigma)
+
+        def calculate_shift(
+            image_seq_len,
+            base_seq_len: int = 256,
+            max_seq_len: int = 4096,
+            base_shift: float = 0.5,
+            max_shift: float = 1.16,
+        ):
+            m = (max_shift - base_shift) / (max_seq_len - base_seq_len)
+            b = base_shift - m * base_seq_len
+            mu = image_seq_len * m + b
+            return mu
+
+        sigmas = torch.linspace(0, 1, num_inferece_steps)
+        mu = calculate_shift(noised_latent.shape[1])
+        print("mu", mu)
+        sigmas = time_shift(mu, 1.0, sigmas)
+        print("sigmas", sigmas)
+        print("sigmas shape", sigmas.shape)
+
+        for i in range(num_inferece_steps - 1):
             print("Denoising step", i)
             with torch.amp.autocast(device_type="cuda", dtype=torch.bfloat16):
                 noise_pred = transformer(
                     hidden_states=noised_latent,
-                    timestep=torch.Tensor([1 - i / num_inferece_steps]).cuda(),
+                    timestep=sigmas[i].cuda(),
                     pooled_projections=feeds["pooled_prompt_embeds"].cuda(),
                     encoder_hidden_states=feeds["prompt_embeds"].cuda(),
                     txt_ids=feeds["text_ids"].cuda(),
@@ -199,7 +223,7 @@ if __name__ == "__main__":
                     return_dict=False,
                 )[0]
 
-            noised_latent = noised_latent - noise_pred * dt
+            noised_latent = noised_latent + (sigmas[i + 1] - sigmas[i]) * noise_pred
             image = cache_flux.decode_from_latent(
                 noised_latent, vae_output.shape[2], vae_output.shape[3]
             )
