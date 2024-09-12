@@ -95,9 +95,9 @@ class CacheFlux:
         torch.save(feeds, os.path.join(self.save_dir, f"{filename}.pt"))
 
     @torch.no_grad()
-    def decode_from_latent(self, latents: torch.Tensor, height, width):
+    def decode_from_latent(self, latents: torch.Tensor, width, height):
         latents = self.pipeline._unpack_latents(
-            latents, height, width, self.vae_scale_factor
+            latents, self.vae_scale_factor, height=height, width=width
         )
         latents = latents.to(self.device)
         latents = (
@@ -123,9 +123,6 @@ if __name__ == "__main__":
     parser.add_argument("--dataset_root", default="dataset/tshirt/images", type=str)
     parser.add_argument(
         "--metadata_file", default="dataset/tshirt/metadata.json", type=str
-    )
-    parser.add_argument(
-        "--sample_cached_file", default="debug/cache_tshirt/image_0.pt", type=str
     )
     parser.add_argument("--save_debug_image", default="debug/image.jpg", type=str)
     parser.add_argument(
@@ -153,9 +150,9 @@ if __name__ == "__main__":
         cache_flux(
             image,
             caption,
-            filename=args.sample_cached_file.split("/")[-1].split(".")[0],
+            filename="debug",
         )
-        feeds = torch.load(args.sample_cached_file)
+        feeds = torch.load(os.path.join(args.cache_dir, "debug.pt"))
         vae_output = feeds["vae_latents"]
         print(vae_output.shape)
 
