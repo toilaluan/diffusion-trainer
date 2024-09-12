@@ -34,7 +34,7 @@ class CacheFlux:
 
     @torch.no_grad()
     def __call__(self, image: Image.Image, prompt: str, filename: str):
-        height, width = image.size
+        width, height = image.size
         (
             prompt_embeds,
             pooled_prompt_embeds,
