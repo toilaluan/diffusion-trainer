@@ -183,11 +183,12 @@ if __name__ == "__main__":
         num_inferece_steps = 30
         dt = 1 / num_inferece_steps
         denoise_images = []
+        noised_latent = noised_latent.cuda()
         for i in range(num_inferece_steps):
             print("Denoising step", i)
             with torch.amp.autocast(device_type="cuda", dtype=torch.bfloat16):
                 noise_pred = transformer(
-                    hidden_states=noised_latent.cuda(),
+                    hidden_states=noised_latent,
                     timestep=torch.Tensor([dt]).cuda(),
                     pooled_projections=feeds["pooled_prompt_embeds"].cuda(),
                     encoder_hidden_states=feeds["prompt_embeds"].cuda(),
