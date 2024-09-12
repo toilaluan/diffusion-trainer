@@ -187,14 +187,14 @@ if __name__ == "__main__":
             print("Denoising step", i)
             with torch.amp.autocast(device_type="cuda", dtype=torch.bfloat16):
                 noise_pred = transformer(
-                    hidden_states=noised_latent,
-                    timestep=torch.Tensor([dt]),
-                    pooled_projections=feeds["pooled_prompt_embeds"],
-                    encoder_hidden_states=feeds["prompt_embeds"],
-                    txt_ids=feeds["text_ids"],
-                    img_ids=feeds["latent_image_ids"],
+                    hidden_states=noised_latent.cuda(),
+                    timestep=torch.Tensor([dt]).cuda(),
+                    pooled_projections=feeds["pooled_prompt_embeds"].cuda(),
+                    encoder_hidden_states=feeds["prompt_embeds"].cuda(),
+                    txt_ids=feeds["text_ids"].cuda(),
+                    img_ids=feeds["latent_image_ids"].cuda(),
                     joint_attention_kwargs=None,
-                    guidance=feeds["guidance"],
+                    guidance=feeds["guidance"].cuda(),
                     return_dict=False,
                 )[0]
 
