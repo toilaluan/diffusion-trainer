@@ -213,7 +213,7 @@ if __name__ == "__main__":
             with torch.amp.autocast(device_type="cuda", dtype=torch.bfloat16):
                 noise_pred = transformer(
                     hidden_states=noised_latent,
-                    timestep=sigmas[i].cuda(),
+                    timestep=sigmas[i].expand(1).cuda(),
                     pooled_projections=feeds["pooled_prompt_embeds"].cuda(),
                     encoder_hidden_states=feeds["prompt_embeds"].cuda(),
                     txt_ids=feeds["text_ids"].cuda(),
