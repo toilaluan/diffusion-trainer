@@ -98,7 +98,6 @@ class CacheFlux:
     def decode_from_latent(self, latents: torch.Tensor, height, width):
         height = int(height * self.vae_scale_factor / 2)
         width = int(width * self.vae_scale_factor / 2)
-        print(latents.shape)
         latents = self.pipeline._unpack_latents(
             latents, height, width, self.vae_scale_factor
         )
@@ -183,7 +182,8 @@ if __name__ == "__main__":
         num_inferece_steps = 30
         dt = 1 / num_inferece_steps
         denoise_images = []
-        noised_latent = noised_latent.cuda()
+        # noised_latent = noised_latent.cuda()
+        noised_latent = torch.randn_like(vae_output).cuda()
         for i in range(num_inferece_steps):
             print("Denoising step", i)
             with torch.amp.autocast(device_type="cuda", dtype=torch.bfloat16):
