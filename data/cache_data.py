@@ -96,8 +96,6 @@ class CacheFlux:
 
     @torch.no_grad()
     def decode_from_latent(self, latents: torch.Tensor, height, width):
-        height = int(height * self.vae_scale_factor / 2)
-        width = int(width * self.vae_scale_factor / 2)
         latents = self.pipeline._unpack_latents(
             latents, height, width, self.vae_scale_factor
         )
@@ -149,6 +147,8 @@ if __name__ == "__main__":
         )
         image, caption = dataset[0]
 
+        width, height = image.size
+
         image.save(args.save_debug_image)
         cache_flux(
             image,
@@ -160,16 +160,12 @@ if __name__ == "__main__":
         print(vae_output.shape)
 
         print("Debugging cache flux decode")
-        image = cache_flux.decode_from_latent(
-            feeds["latents"], vae_output.shape[2], vae_output.shape[3]
-        )
+        image = cache_flux.decode_from_latent(feeds["latents"], width, height)
         image.save(args.save_debug_image_reconstructed)
 
         cached_dataset = CoreCachedDataset(cached_folder=args.cache_dir)
         noised_latent = cached_dataset.get_noised_latent(0, 0.5)
-        image = cache_flux.decode_from_latent(
-            noised_latent, vae_output.shape[2], vae_output.shape[3]
-        )
+        image = cache_flux.decode_from_latent(noised_latent, width=width, height=height)
         image.save(args.save_debug_image_noised)
 
         print("Debugging transformer denoise")
@@ -228,7 +224,7 @@ if __name__ == "__main__":
 
             noised_latent = noised_latent + (sigmas[i + 1] - sigmas[i]) * noise_pred
             image = cache_flux.decode_from_latent(
-                noised_latent, vae_output.shape[2], vae_output.shape[3]
+                noised_latent, width=width, height=height
             )
             denoise_images.append(image)
 
