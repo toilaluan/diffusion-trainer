@@ -119,7 +119,7 @@ class CoreCachedDataset(Dataset):
         latent = feeds["vae_latents"]
         dtype = latent.dtype
         noised_latent, sigma, noise = self.add_noise(latent, dtype)
-        packed_latent = self.pipeline.pack_latents(
+        packed_latent = self.pipeline._pack_latents(
             noised_latent,
             batch_size=noised_latent.shape[0],
             num_channels_latents=noised_latent.shape[1],
