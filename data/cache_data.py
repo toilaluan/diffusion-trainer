@@ -205,8 +205,11 @@ if __name__ == "__main__":
         mu = calculate_shift(noised_latent.shape[1])
         print("mu", mu)
         sigmas = time_shift(mu, 1.0, sigmas)
+        sigmas = sigmas.flip(0)
         print("sigmas", sigmas)
         print("sigmas shape", sigmas.shape)
+
+        # reverse the sigmas
 
         for i in range(num_inferece_steps - 1):
             print("Denoising step", i)
@@ -223,7 +226,7 @@ if __name__ == "__main__":
                     return_dict=False,
                 )[0]
 
-            noised_latent = noised_latent - (sigmas[i + 1] - sigmas[i]) * noise_pred
+            noised_latent = noised_latent + (sigmas[i + 1] - sigmas[i]) * noise_pred
             image = cache_flux.decode_from_latent(
                 noised_latent, vae_output.shape[2], vae_output.shape[3]
             )
