@@ -1,4 +1,5 @@
 import torch
+import torch.amp
 import transformers
 import diffusers
 from data.core_data import CoreDataset
@@ -43,7 +44,6 @@ class CacheFlux:
             prompt_2=prompt,
             device=self.device,
             num_images_per_prompt=1,
-            max_sequence_length=256,
         )
 
         num_channels_latents = self.transformer_config.in_channels // 4
@@ -114,31 +114,104 @@ class CacheFlux:
 
 if __name__ == "__main__":
     from data.core_data import CoreCachedDataset
+    import diffusers
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Script to run training with various options."
+    )
+
+    parser.add_argument("--cache_dir", default="debug/cache_tshirt", type=str)
+    parser.add_argument("--dataset_root", default="dataset/tshirt/images", type=str)
+    parser.add_argument(
+        "--metadata_file", default="dataset/tshirt/metadata.json", type=str
+    )
+    parser.add_argument(
+        "--sample_cached_file", default="debug/cache_tshirt/image_0.pt", type=str
+    )
+    parser.add_argument("--save_debug_image", default="debug/image.jpg", type=str)
+    parser.add_argument(
+        "--save_debug_image_reconstructed",
+        default="debug/image_reconstructed.jpg",
+        type=str,
+    )
+    parser.add_argument(
+        "--save_debug_image_noised", default="debug/image_noised.jpg", type=str
+    )
+    args = parser.parse_args()
 
     with torch.no_grad():
-        cache_flux = CacheFlux(save_dir="debug/cache_tshirt")
+        print("Debugging cache flux")
+        cache_flux = CacheFlux(save_dir=args.cache_dir)
         dataset = CoreDataset(
-            root_folder="dataset/tshirt/images",
-            metadata_file="dataset/tshirt/metadata.json",
+            root_folder=args.dataset_root,
+            metadata_file=args.metadata_file,
         )
         image, caption = dataset[0]
 
-        image.save("debug/image.jpg")
-        cache_flux(image, caption, "image")
-        feeds = torch.load("debug/cache_tshirt/image.pt")
+        image.save(args.save_debug_image)
+        cache_flux(
+            image,
+            caption,
+            filename=args.sample_cached_file.split("/")[-1].split(".")[0],
+        )
+        feeds = torch.load(args.sample_cached_file)
         vae_output = feeds["vae_latents"]
         print(vae_output.shape)
+
+        print("Debugging cache flux decode")
         image = cache_flux.decode_from_latent(
             feeds["latents"], vae_output.shape[2], vae_output.shape[3]
         )
-        image.save("debug/image_reconstructed.jpg")
+        image.save(args.save_debug_image_reconstructed)
 
-        cached_dataset = CoreCachedDataset(cached_folder="debug/cache_tshirt")
+        cached_dataset = CoreCachedDataset(cached_folder=args.cache_dir)
         noised_latent = cached_dataset.get_noised_latent(0, 0.5)
         image = cache_flux.decode_from_latent(
             noised_latent, vae_output.shape[2], vae_output.shape[3]
         )
-        image.save("debug/image_noised.jpg")
+        image.save(args.save_debug_image_noised)
+
+        print("Debugging transformer denoise")
+        transformer = diffusers.FluxTransformer2DModel.from_pretrained(
+            "black-forest-labs/FLUX.1-dev",
+            subfolder="transformer",
+            torch_dtype=torch.bfloat16,
+        )
+        transformer.to("cuda")
+
+        num_inferece_steps = 30
+        dt = 1 / num_inferece_steps
+        denoise_images = []
+        for i in range(num_inferece_steps):
+            print("Denoising step", i)
+            with torch.amp.autocast(device_type="cuda", dtype=torch.bfloat16):
+                noise_pred = transformer(
+                    hidden_states=noised_latent,
+                    timestep=torch.Tensor([dt]),
+                    pooled_projections=feeds["pooled_prompt_embeds"],
+                    encoder_hidden_states=feeds["prompt_embeds"],
+                    txt_ids=feeds["text_ids"],
+                    img_ids=feeds["latent_image_ids"],
+                    joint_attention_kwargs=None,
+                    guidance=feeds["guidance"],
+                    return_dict=False,
+                )[0]
+
+            noised_latent = noised_latent - noise_pred * dt
+            image = cache_flux.decode_from_latent(
+                noised_latent, vae_output.shape[2], vae_output.shape[3]
+            )
+            denoise_images.append(image)
+
+        # save denoise images as gif
+        denoise_images[0].save(
+            "debug/denoise.gif",
+            save_all=True,
+            append_images=denoise_images[1:],
+            duration=100,
+            loop=0,
+        )
 
         for i, (image, caption) in enumerate(dataset):
             cache_flux(image, caption, filename=f"image_{i}")
