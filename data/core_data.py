@@ -127,6 +127,12 @@ class CoreCachedDataset(Dataset):
         cached_file = self.cached_files[idx]
         feeds = torch.load(cached_file)
         latent = feeds["latents"]
+        mu = calculate_shift(latent.shape[1])
+        shift = math.exp(mu)
+        print("mu", mu)
+        print("sigma", sigma)
+        sigma = (sigma * shift) / (1 + (shift - 1) * sigma)
+        print("shifted sigma", sigma)
         dtype = latent.dtype
         noise = torch.randn_like(latent).to(dtype)
         noised_latent = (1 - sigma) * latent + sigma * noise
