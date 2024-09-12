@@ -183,7 +183,7 @@ if __name__ == "__main__":
         dt = 1 / num_inferece_steps
         denoise_images = []
         # noised_latent = noised_latent.cuda()
-        noised_latent = torch.randn_like(vae_output).cuda()
+        noised_latent = torch.randn_like(noised_latent).cuda()
         for i in range(num_inferece_steps):
             print("Denoising step", i)
             with torch.amp.autocast(device_type="cuda", dtype=torch.bfloat16):
