@@ -74,8 +74,8 @@ class CacheFlux:
             latents,
             batch_size=latents.shape[0],
             num_channels_latents=latents.shape[1],
-            height=latents.shape[2],
-            width=latents.shape[3],
+            height=height,
+            width=width,
         )
         assert packed_latents.shape == noise_latents.shape
         guidance = (
