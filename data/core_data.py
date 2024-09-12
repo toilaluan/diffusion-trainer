@@ -6,6 +6,20 @@ import glob
 import random
 import os
 from PIL import Image
+import math
+
+
+def calculate_shift(
+    image_seq_len,
+    base_seq_len: int = 256,
+    max_seq_len: int = 4096,
+    base_shift: float = 0.5,
+    max_shift: float = 1.16,
+):
+    m = (max_shift - base_shift) / (max_seq_len - base_seq_len)
+    b = base_shift - m * base_seq_len
+    mu = image_seq_len * m + b
+    return mu
 
 
 class CoreDataset(Dataset):
@@ -84,7 +98,10 @@ class CoreCachedDataset(Dataset):
         # else:
         #     timestep = random.randint(1, 250)
         # sigma = timestep / self.max_step
+        mu = calculate_shift(latent.shape[1])
         sigma = torch.randn(1).sigmoid().item()
+        shift = math.exp(mu)
+        sigma = (sigma * shift) / (1 + (shift - 1) * sigma)
         noise = torch.randn_like(latent).to(dtype)
         noised_latent = (1 - sigma) * latent + sigma * noise
         return noised_latent, sigma, noise

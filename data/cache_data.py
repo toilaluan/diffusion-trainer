@@ -8,6 +8,23 @@ import os
 from diffusers.image_processor import VaeImageProcessor
 
 
+def calculate_shift(
+    image_seq_len,
+    base_seq_len: int = 256,
+    max_seq_len: int = 4096,
+    base_shift: float = 0.5,
+    max_shift: float = 1.16,
+):
+    m = (max_shift - base_shift) / (max_seq_len - base_seq_len)
+    b = base_shift - m * base_seq_len
+    mu = image_seq_len * m + b
+    return mu
+
+
+def time_shift(mu: float, sigma: float, t: torch.Tensor):
+    return math.exp(mu) / (math.exp(mu) + (1 / t - 1) ** sigma)
+
+
 class CacheFlux:
     def __init__(
         self,
@@ -178,21 +195,6 @@ if __name__ == "__main__":
         denoise_images = []
         noised_latent = noised_latent.cuda()
         # noised_latent = torch.randn_like(noised_latent).cuda()
-
-        def time_shift(mu: float, sigma: float, t: torch.Tensor):
-            return math.exp(mu) / (math.exp(mu) + (1 / t - 1) ** sigma)
-
-        def calculate_shift(
-            image_seq_len,
-            base_seq_len: int = 256,
-            max_seq_len: int = 4096,
-            base_shift: float = 0.5,
-            max_shift: float = 1.16,
-        ):
-            m = (max_shift - base_shift) / (max_seq_len - base_seq_len)
-            b = base_shift - m * base_seq_len
-            mu = image_seq_len * m + b
-            return mu
 
         sigmas = torch.linspace(0, 1, num_inferece_steps)
         mu = calculate_shift(noised_latent.shape[1])
