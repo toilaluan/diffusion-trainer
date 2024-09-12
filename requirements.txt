@@ -9,3 +9,4 @@ accelerate
 peft
 optimum-quanto
 bitsandbytes
+prodigyopt

@@ -18,10 +18,6 @@ class MyPrintingCallback(Callback):
 
 callbacks = [
     MyPrintingCallback(),
-    ModelCheckpoint(
-        dirpath="checkpoints",
-        every_n_train_steps=100,
-    ),
     LearningRateMonitor("step"),
 ]
 

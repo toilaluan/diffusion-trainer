@@ -9,6 +9,7 @@ from optimum.quanto import freeze, qfloat8, quantize, qint4
 import bitsandbytes as bnb
 import gc
 import wandb
+from prodigyopt import Prodigy
 
 
 def flush():
@@ -118,9 +119,8 @@ class FluxLightning(L.LightningModule):
         feeds, targets, metadata = batch
         noise_pred = self(**feeds)
         loss = self.loss_fn(noise_pred, targets)
-        mean_loss = loss.mean()
-        self.log("Mean loss", mean_loss, on_step=True, on_epoch=True, prog_bar=True)
-        return mean_loss
+        self.log("loss", loss, on_step=True, on_epoch=True, prog_bar=True)
+        return loss
 
     def on_validation_start(self) -> None:
         super().on_validation_start()
@@ -159,9 +159,12 @@ class FluxLightning(L.LightningModule):
         params_to_optimize = list(
             filter(lambda p: p.requires_grad, self.denoiser.parameters())
         )
-        optimizer = torch.optim.AdamW(
-            params_to_optimize,
-            lr=self.learning_rate,
-            weight_decay=self.weight_decay,
+        # optimizer = torch.optim.AdamW(
+        #     params_to_optimize,
+        #     lr=self.learning_rate,
+        #     weight_decay=self.weight_decay,
+        # )
+        optimizer = Prodigy(
+            params_to_optimize, lr=1.0, weight_decay=self.weight_decay, decouple=True
         )
         return optimizer
