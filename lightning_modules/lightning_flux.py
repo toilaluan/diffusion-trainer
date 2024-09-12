@@ -64,7 +64,7 @@ class FluxLightning(L.LightningModule):
         transformer_lora_config = LoraConfig(
             r=16,
             lora_alpha=16,
-            init_lora_weights=False,
+            init_lora_weights="gaussian",
             target_modules=["to_k", "to_q", "to_v", "to_out.0."],
         )
         self.denoiser.add_adapter(transformer_lora_config)
@@ -88,7 +88,7 @@ class FluxLightning(L.LightningModule):
             encoder_hidden_states=prompt_embeds,
             txt_ids=text_ids,
             img_ids=latent_image_ids,
-            joint_attention_kwargs=joint_attention_kwargs,
+            joint_attention_kwargs=None,
             guidance=guidance,
             return_dict=False,
         )[0]
