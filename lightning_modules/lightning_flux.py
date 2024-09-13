@@ -124,8 +124,8 @@ class FluxLightning(L.LightningModule):
 
     def on_validation_start(self) -> None:
         super().on_validation_start()
-        if self.current_epoch % 40 == 0:
-            self.save_lora(f"lora_weights_epoch_{self.current_epoch}.pt")
+        if self.current_epoch % 9 == 0:
+            self.save_lora(f"lora_weights_epoch_{self.current_epoch}")
 
     def validation_step(self, batch, batch_idx):
         feeds, targets, metadata = batch
@@ -165,6 +165,11 @@ class FluxLightning(L.LightningModule):
         #     weight_decay=self.weight_decay,
         # )
         optimizer = Prodigy(
-            params_to_optimize, lr=1.0, weight_decay=self.weight_decay, decouple=True
+            params_to_optimize,
+            lr=1.0,
+            weight_decay=self.weight_decay,
+            decouple=True,
+            d_coef=0.8,
+            use_bias_correction=True,
         )
         return optimizer
