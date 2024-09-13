@@ -84,7 +84,7 @@ trainer = pl.Trainer(
     logger=wandb_logger,
     strategy=args.strategy,
     devices=args.devices,
-    limit_val_batches=1,
+    limit_val_batches=3,
 )
 
 trainer.fit(model, train_dataloader, val_dataloader)
