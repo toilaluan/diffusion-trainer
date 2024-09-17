@@ -10,3 +10,8 @@ peft
 optimum-quanto
 bitsandbytes
 prodigyopt
+huggingface_hub==0.22.2
+Pillow
+pathlib
+mistral_inference
+mistral_common
