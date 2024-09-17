@@ -62,6 +62,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Mistral Inference")
     parser.add_argument("--root-folder", type=str, default="dataset/tshirt")
     parser.add_argument("--caption-type", choices=["short", "long"], default="short")
+    parser.add_argument("--trigger", type=str, default="OHNX tshirt")
     args = parser.parse_args()
 
     image_files = glob.glob(f"{args.root_folder}/images/*.jpg")
@@ -84,6 +85,7 @@ if __name__ == "__main__":
         caption = mistral_inference.infer(
             prompt=prompt, image=image, max_tokens=256, temperature=0.35
         )
+        caption = args.trigger + ". " + caption
         metadata.append({"image": image_file.split("/")[-1], "caption": caption})
 
     with open(f"{args.root_folder}/metadata.json", "w") as f:
