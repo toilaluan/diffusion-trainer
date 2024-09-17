@@ -85,3 +85,6 @@ if __name__ == "__main__":
             prompt=prompt, image=image, max_tokens=256, temperature=0.35
         )
         metadata.append({"image": image_file.split("/")[-1], "caption": caption})
+
+    with open(f"{args.root_folder}/metadata.json", "w") as f:
+        json.dump(metadata, f, indent=4)
