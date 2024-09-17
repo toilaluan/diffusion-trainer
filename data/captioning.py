@@ -82,6 +82,6 @@ if __name__ == "__main__":
             print(f"Error processing {image_file}: {e}")
             continue
         caption = mistral_inference.infer(
-            prompt=prompt, image=image, max_length=256, temperature=0.35
+            prompt=prompt, image=image, max_tokens=256, temperature=0.35
         )
         metadata.append({"image": image_file.split("/")[-1], "caption": caption})
