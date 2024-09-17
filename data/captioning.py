@@ -88,5 +88,5 @@ if __name__ == "__main__":
         caption = args.trigger + ". " + caption
         metadata.append({"image": image_file.split("/")[-1], "caption": caption})
 
-    with open(f"{args.root_folder}/metadata.json", "w") as f:
-        json.dump(metadata, f, indent=4)
+        with open(f"{args.root_folder}/metadata.json", "w") as f:
+            json.dump(metadata, f, indent=4)
