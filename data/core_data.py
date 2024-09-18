@@ -118,7 +118,7 @@ class CoreCachedDataset(Dataset):
 
     def __getitem__(self, index):
         cached_file = self.cached_files[index]
-        feeds = torch.load(cached_file)
+        feeds = torch.load(cached_file, weights_only=True)
         latent = feeds["vae_latents"]
         dtype = latent.dtype
         noised_latent, sigma, noise = self.add_noise(latent, dtype)
@@ -142,7 +142,7 @@ class CoreCachedDataset(Dataset):
 
     def get_noised_latent(self, idx, sigma):
         cached_file = self.cached_files[idx]
-        feeds = torch.load(cached_file)
+        feeds = torch.load(cached_file, weights_only=True)
         latent = feeds["latents"]
         mu = calculate_shift(latent.shape[1])
         shift = math.exp(mu)
