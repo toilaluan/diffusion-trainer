@@ -14,6 +14,11 @@ class FluxLightning(L.LightningModule):
         model_config=None,
         optimizer_config=None,
     ):
+        """
+        Args:
+            model_config (Namespace): Configuration object for model parameters, including LoRA settings and quantization.
+            optimizer_config (Namespace): Configuration object for optimizer parameters such as learning rate and weight decay.
+        """
         super().__init__()
         self.model_config = model_config
         self.optimizer_config = optimizer_config
@@ -67,6 +72,13 @@ class FluxLightning(L.LightningModule):
         )
 
     def apply_lora(self, r, lora_alpha):
+        """
+        Applies LoRA (Low-Rank Adaptation) to the model's transformer layers.
+
+        Args:
+            r (int): The rank of the LoRA adaptation.
+            lora_alpha (int): Alpha parameter controlling the scaling of LoRA weights.
+        """
         transformer_lora_config = LoraConfig(
             r=r,
             lora_alpha=lora_alpha,
@@ -87,6 +99,22 @@ class FluxLightning(L.LightningModule):
         guidance: torch.Tensor = None,
         **kwargs,
     ):
+        """
+        Forward pass for the denoiser model.
+
+        Args:
+            latents (torch.Tensor): Latent variables for the input.
+            timestep (int): Timestep for the denoising process.
+            pooled_prompt_embeds (torch.Tensor): Pooled embeddings from the prompt.
+            prompt_embeds (torch.Tensor): Full prompt embeddings.
+            text_ids (torch.Tensor): Tokenized text IDs.
+            latent_image_ids (torch.Tensor): Image-related latent IDs.
+            joint_attention_kwargs (dict): Dictionary of joint attention configurations.
+            guidance (torch.Tensor): Guidance input for the denoising process.
+
+        Returns:
+            torch.Tensor: Predicted noise values for the input latents.
+        """
         noise_pred = self.denoiser(
             hidden_states=latents,
             timestep=timestep,
@@ -101,6 +129,16 @@ class FluxLightning(L.LightningModule):
         return noise_pred
 
     def loss_fn(self, noise_pred, targets):
+        """
+        Loss function for training the denoiser model.
+
+        Args:
+            noise_pred (torch.Tensor): Predicted noise from the denoiser.
+            targets (torch.Tensor): Ground truth noise for training.
+
+        Returns:
+            torch.Tensor: Computed loss.
+        """
         noise_pred = self.pipeline._unpack_latents(
             noise_pred,
             height=targets.shape[2] * 8,
@@ -114,6 +152,16 @@ class FluxLightning(L.LightningModule):
         return loss
 
     def training_step(self, batch, batch_idx):
+        """
+        Training step that computes loss and logs it during training.
+
+        Args:
+            batch (tuple): A tuple containing input features, targets, and metadata.
+            batch_idx (int): Index of the current batch.
+
+        Returns:
+            torch.Tensor: Loss for the current training step.
+        """
         feeds, targets, metadata = batch
         noise_pred = self(**feeds)
         loss = self.loss_fn(noise_pred, targets)
@@ -121,11 +169,21 @@ class FluxLightning(L.LightningModule):
         return loss
 
     def on_train_start(self) -> None:
+        """
+        Called at the start of training to save LoRA models at regular intervals.
+        """
         super().on_train_start()
         if self.current_epoch % self.save_lora_every_n_epoch == 0:
             self.save_lora(f"checkpoints/lora_epoch-{self.current_epoch}")
 
     def validation_step(self, batch, batch_idx):
+        """
+        Validation step that generates and logs an image for visualization.
+
+        Args:
+            batch (tuple): A tuple containing input features, targets, and metadata.
+            batch_idx (int): Index of the current batch.
+        """
         feeds, targets, metadata = batch
         prompt_embeds = feeds["prompt_embeds"][:1]
         pooled_prompt_embeds = feeds["pooled_prompt_embeds"][:1]
@@ -146,6 +204,12 @@ class FluxLightning(L.LightningModule):
         wandb.log({f"Validation {batch_idx} image": image})
 
     def save_lora(self, path: str):
+        """
+        Saves the LoRA-adapted weights.
+
+        Args:
+            path (str): Path to save the LoRA weights.
+        """
         transformer_lora_layers = get_peft_model_state_dict(self.denoiser)
         diffusers.FluxPipeline.save_lora_weights(
             save_directory=path,
@@ -153,6 +217,12 @@ class FluxLightning(L.LightningModule):
         )
 
     def configure_optimizers(self):
+        """
+        Configures the optimizer for training.
+
+        Returns:
+            torch.optim.Optimizer: The configured optimizer.
+        """
         params_to_optimize = list(
             filter(lambda p: p.requires_grad, self.denoiser.parameters())
         )
@@ -175,17 +245,45 @@ class FluxLightning(L.LightningModule):
 
     @staticmethod
     def get_optimizer_args(parser):
+        """
+        Defines arguments for optimizer configuration.
+
+        Args:
+            parser (ArgumentParser): Argument parser object used to define optimizer-related command-line arguments.
+
+        Arguments:
+            --optimizer.weight_decay (float): Weight decay for the optimizer. Default: 0.1.
+            --optimizer.lr (float): Learning rate for the optimizer. Default: 1.0.
+            --optimizer.type (str): Type of optimizer to use (e.g., "adamw", "prodigy"). Default: "prodigy".
+        """
         parser.add_argument("--optimizer.weight_decay", type=float, default=0.1)
         parser.add_argument("--optimizer.lr", type=float, default=1.0)
         parser.add_argument("--optimizer.type", type=str, default="prodigy")
 
     @staticmethod
     def get_model_args(parser):
+        """
+        Defines arguments for model configuration.
+
+        Args:
+            parser (ArgumentParser): Argument parser object used to define model-related command-line arguments.
+
+        Arguments:
+            --model.lora_rank (int): Rank for LoRA adaptation. Default: 16.
+            --model.lora_alpha (int): Alpha for LoRA scaling. Default: 16.
+            --model.quanto (str): Quantization method for model ("qint4", "qfloat8"). Default: "" (no quantization).
+        """
         parser.add_argument("--model.lora_rank", type=int, default=16)
         parser.add_argument("--model.lora_alpha", type=int, default=16)
         parser.add_argument("--model.quanto", type=str, default="")
 
     @staticmethod
     def get_args(parser):
+        """
+        Combines model and optimizer argument definitions.
+
+        Args:
+            parser (ArgumentParser): Argument parser object used to define all command-line arguments.
+        """
         FluxLightning.get_model_args(parser)
         FluxLightning.get_optimizer_args(parser)

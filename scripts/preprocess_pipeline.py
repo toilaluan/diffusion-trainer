@@ -12,6 +12,20 @@ import argparse
 
 class PreprocessPipeline:
     def __init__(self, config=None):
+        """
+        Initialize the PreprocessPipeline.
+
+        Args:
+            config (Namespace, optional): Configuration object for the preprocess pipeline. If not provided,
+            the configuration will be loaded from arguments passed via argparse.
+
+        Attributes:
+            core_dataset (CoreDataset): Dataset object for handling the core dataset.
+            cache_flux (CacheFlux): Caching utility for processing and storing image embeddings.
+            pixtral_inference (PixtralInference, optional): Model used for generating image captions,
+            initialized only if captioning is enabled.
+            config (Namespace): Configuration object containing all necessary parameters.
+        """
         if config is None:
             parser = argparse.ArgumentParser()
             config = Config.get_args(parser)
@@ -27,6 +41,19 @@ class PreprocessPipeline:
 
     @staticmethod
     def get_args(parser):
+        """
+        Define the command-line arguments for the PreprocessPipeline.
+
+        Args:
+            parser (ArgumentParser): Argument parser used to define command-line arguments.
+
+        Arguments:
+            --preprocess_pipeline.do_captioning (bool): Whether to generate captions for the images and create a metadata file. Default is False.
+            --preprocess_pipeline.debug (bool): Whether to enable debugging mode for cache flux and inspect intermediate steps. Default is False.
+
+        Returns:
+            Config: Configuration object containing the parsed arguments.
+        """
         CoreDataset.get_args(parser)
         CoreCachedDataset.get_args(parser)
         CacheFlux.get_args(parser)
@@ -50,7 +77,14 @@ class PreprocessPipeline:
         return config
 
     def start(self):
+        """
+        Start the preprocessing pipeline. Depending on the configuration, this function can:
+        - Perform captioning for images and save metadata in JSON format.
+        - Apply cache flux to store latent embeddings for the images.
+        - Debug intermediate outputs of the image caching and denoising process.
+        """
         if self.config.preprocess_pipeline.do_captioning:
+            # Image captioning process
             image_files = glob.glob(
                 f"{self.config.core_dataset.root_folder}/images/*.jpg"
             )
@@ -88,6 +122,7 @@ class PreprocessPipeline:
 
         with torch.no_grad():
             if self.config.preprocess_pipeline.debug:
+                # Debugging mode: cache flux and visualize intermediate results
                 print("Debugging cache flux")
                 os.makedirs("debug", exist_ok=True)
                 image, caption = self.core_dataset[0]
@@ -127,11 +162,11 @@ class PreprocessPipeline:
                 )
                 transformer.to("cuda")
 
-                num_inferece_steps = 30
+                num_inference_steps = 30
                 denoise_images = []
                 noised_latent = noised_latent.cuda()
 
-                sigmas = torch.linspace(0, 1, num_inferece_steps)
+                sigmas = torch.linspace(0, 1, num_inference_steps)
                 mu = CacheFlux.calculate_shift(noised_latent.shape[1])
                 print("mu", mu)
                 sigmas = CacheFlux.time_shift(mu, 1.0, sigmas)
@@ -139,12 +174,12 @@ class PreprocessPipeline:
                 print("sigmas", sigmas)
                 print("sigmas shape", sigmas.shape)
 
-                # reverse the sigmas
+                # Reverse the sigmas
                 pbar = tqdm(
-                    total=num_inferece_steps,
+                    total=num_inference_steps,
                     desc="Debugging denoising from cached image",
                 )
-                for i in range(num_inferece_steps - 1):
+                for i in range(num_inference_steps - 1):
                     with torch.amp.autocast(device_type="cuda", dtype=torch.bfloat16):
                         noise_pred = transformer(
                             hidden_states=noised_latent,
@@ -168,7 +203,7 @@ class PreprocessPipeline:
                     pbar.update(1)
                 pbar.close()
 
-                # save denoise images as gif
+                # Save denoise images as a gif
                 denoise_images[0].save(
                     "debug/denoising_process.gif",
                     save_all=True,
@@ -179,6 +214,8 @@ class PreprocessPipeline:
                 os.remove(
                     os.path.join(self.config.cache_flux.cache_dir, "cached_image.pt")
                 )
+
+            # Standard caching process
             pbar = tqdm(total=len(self.core_dataset), desc="Caching all dataset")
             for i, (image, caption) in enumerate(self.core_dataset):
                 self.cache_flux(image, caption, filename=f"image_{i}")

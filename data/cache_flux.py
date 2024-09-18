@@ -16,6 +16,10 @@ class CacheFlux:
         self,
         config,
     ):
+        """
+        Args:
+            config (Namespace): Configuration object containing the cache directory, pretrained model path, and torch dtype.
+        """
         self.save_dir = config.cache_dir
         self.guidance_scale = 3.5
         self.pretrained_path = config.pretrained_path
@@ -37,6 +41,12 @@ class CacheFlux:
 
     @torch.no_grad()
     def __call__(self, image: Image.Image, prompt: str, filename: str):
+        """
+        Args:
+            image (PIL.Image.Image): Input image to be processed.
+            prompt (str): The text prompt for generating image embeddings.
+            filename (str): The filename to save the resulting cache data.
+        """
         width, height = image.size
         (
             prompt_embeds,
@@ -97,6 +107,15 @@ class CacheFlux:
 
     @torch.no_grad()
     def decode_from_latent(self, latents: torch.Tensor, width, height):
+        """
+        Args:
+            latents (torch.Tensor): Latent representations of the image.
+            width (int): Width of the original image.
+            height (int): Height of the original image.
+
+        Returns:
+            PIL.Image.Image: Decoded image from latent space.
+        """
         latents = self.pipeline._unpack_latents(
             latents, height, width, self.vae_scale_factor
         )
@@ -117,6 +136,17 @@ class CacheFlux:
         base_shift: float = 0.5,
         max_shift: float = 1.16,
     ):
+        """
+        Args:
+            image_seq_len (int): Length of the image sequence.
+            base_seq_len (int): Base sequence length for shift calculation. Default: 256.
+            max_seq_len (int): Maximum sequence length for shift calculation. Default: 4096.
+            base_shift (float): Base shift value. Default: 0.5.
+            max_shift (float): Maximum shift value. Default: 1.16.
+
+        Returns:
+            float: Calculated shift value.
+        """
         m = (max_shift - base_shift) / (max_seq_len - base_seq_len)
         b = base_shift - m * base_seq_len
         mu = image_seq_len * m + b
@@ -124,10 +154,31 @@ class CacheFlux:
 
     @staticmethod
     def time_shift(mu: float, sigma: float, t: torch.Tensor):
+        """
+        Args:
+            mu (float): Shift parameter for time calculation.
+            sigma (float): Scaling factor for time shift.
+            t (torch.Tensor): Input tensor for time calculation.
+
+        Returns:
+            float: Result of the time shift operation.
+        """
         return math.exp(mu) / (math.exp(mu) + (1 / t - 1) ** sigma)
 
     @staticmethod
     def get_args(parser):
+        """
+        Defines the arguments for configuring the CacheFlux pipeline.
+
+        Args:
+            parser (ArgumentParser): Argument parser object used to define command-line arguments.
+
+        Arguments:
+            --cache_flux.cache_dir (str): Cache directory to store the processed files. Default: "cache/tshirt".
+            --cache_flux.pretrained_path (str): Path to the pretrained model. Default: "black-forest-labs/FLUX.1-dev".
+            --cache_flux.torch_dtype (str): Data type for torch tensors (e.g., "torch.float32", "torch.float16"). Default: "torch.float32".
+            --cache_flux.guidance_scale (float): Guidance scale value for image generation. Default: 3.5.
+        """
         parser.add_argument(
             "--cache_flux.cache_dir",
             default="cache/tshirt",
@@ -152,30 +203,3 @@ class CacheFlux:
             type=float,
             help="Guidance scale",
         )
-
-
-if __name__ == "__main__":
-    from data.core_data import CoreCachedDataset
-    import diffusers
-    import argparse
-    import math
-
-    parser = argparse.ArgumentParser(
-        description="Script to run training with various options."
-    )
-
-    parser.add_argument("--cache_dir", default="debug/cache_tshirt", type=str)
-    parser.add_argument("--dataset_root", default="dataset/tshirt/images", type=str)
-    parser.add_argument(
-        "--metadata_file", default="dataset/tshirt/metadata.json", type=str
-    )
-    parser.add_argument("--save_debug_image", default="debug/image.jpg", type=str)
-    parser.add_argument(
-        "--save_debug_image_reconstructed",
-        default="debug/image_reconstructed.jpg",
-        type=str,
-    )
-    parser.add_argument(
-        "--save_debug_image_noised", default="debug/image_noised.jpg", type=str
-    )
-    args = parser.parse_args()

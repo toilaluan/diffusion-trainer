@@ -13,6 +13,12 @@ from pathlib import Path
 
 class PixtralInference:
     def __init__(self, config):
+        """
+        Initialize the Pixtral inference pipeline.
+
+        Args:
+            config (Namespace): Configuration object containing model repository and other settings.
+        """
         self.mistral_models_path = Path.home().joinpath("mistral_models", "Pixtral")
         self.mistral_models_path.mkdir(parents=True, exist_ok=True)
 
@@ -23,6 +29,12 @@ class PixtralInference:
         self.model = Transformer.from_folder(self.mistral_models_path)
 
     def _download_model(self, repo_id):
+        """
+        Download the model files from the repository.
+
+        Args:
+            repo_id (str): Repository ID to download the model from.
+        """
         snapshot_download(
             repo_id=repo_id,
             allow_patterns=["params.json", "consolidated.safetensors", "tekken.json"],
@@ -30,6 +42,17 @@ class PixtralInference:
         )
 
     def infer(self, prompt, image, **kwargs):
+        """
+        Perform inference on a given image and prompt.
+
+        Args:
+            prompt (str): The text prompt for inference.
+            image (PIL.Image.Image): The image for inference.
+            kwargs: Additional keyword arguments for generation settings.
+
+        Returns:
+            str: The generated result after inference.
+        """
         completion_request = ChatCompletionRequest(
             messages=[
                 UserMessage(content=[ImageChunk(image=image), TextChunk(text=prompt)])
@@ -53,6 +76,19 @@ class PixtralInference:
 
     @staticmethod
     def get_args(parser):
+        """
+        Defines the arguments for configuring Pixtral inference.
+
+        Args:
+            parser (ArgumentParser): Argument parser object used to define command-line arguments.
+
+        Arguments:
+            --pixtral_inference.model_repo (str): Model repository to download the model from. Default: "mistral-community/pixtral-12b-240910".
+            --pixtral_inference.max_tokens (int): Maximum number of tokens for the model's output. Default: 256.
+            --pixtral_inference.temperature (float): Sampling temperature for inference. Default: 0.35.
+            --pixtral_inference.trigger (str): Trigger keyword for generating responses. Default: "OHNX".
+            --pixtral_inference.caption_type (str): Type of caption generation ("short" or "long"). Default: "short".
+        """
         parser.add_argument(
             "--pixtral_inference.model_repo",
             type=str,
@@ -83,17 +119,3 @@ class PixtralInference:
             default="short",
             help="Caption type",
         )
-
-
-if __name__ == "__main__":
-    import argparse
-    import glob
-    import json
-    from PIL import Image
-    from tqdm import tqdm
-
-    parser = argparse.ArgumentParser(description="Mistral Inference")
-    parser.add_argument("--root-folder", type=str, default="dataset/tshirt")
-    parser.add_argument("--caption-type", choices=["short", "long"], default="short")
-    parser.add_argument("--trigger", type=str, default="OHNX tshirt")
-    args = parser.parse_args()
