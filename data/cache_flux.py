@@ -6,48 +6,31 @@ from data.core_data import CoreDataset
 from PIL import Image
 import os
 from diffusers.image_processor import VaeImageProcessor
-
-
-def calculate_shift(
-    image_seq_len,
-    base_seq_len: int = 256,
-    max_seq_len: int = 4096,
-    base_shift: float = 0.5,
-    max_shift: float = 1.16,
-):
-    m = (max_shift - base_shift) / (max_seq_len - base_seq_len)
-    b = base_shift - m * base_seq_len
-    mu = image_seq_len * m + b
-    return mu
-
-
-def time_shift(mu: float, sigma: float, t: torch.Tensor):
-    return math.exp(mu) / (math.exp(mu) + (1 / t - 1) ** sigma)
+from utilities.dotable_config import Config
+import argparse
 
 
 class CacheFlux:
     def __init__(
         self,
-        pretrained_path: str = "black-forest-labs/FLUX.1-dev",
-        save_dir: str = "data/cache",
-        torch_dtype: torch.dtype = torch.float32,
+        config,
     ):
-        self.save_dir = save_dir
+        self.save_dir = config.cache_dir
         self.guidance_scale = 3.5
-        self.pretrained_path = pretrained_path
+        self.pretrained_path = config.pretrained_path
         self.pipeline = diffusers.FluxPipeline.from_pretrained(
-            pretrained_path, transformer=None, torch_dtype=torch_dtype
+            self.pretrained_path, transformer=None, torch_dtype=config.torch_dtype
         )
         self.transformer_config = transformers.PretrainedConfig.from_pretrained(
-            pretrained_path,
+            self.pretrained_path,
             subfolder="transformer",
         )
         self.vae_scale_factor = 2 ** (len(self.pipeline.vae.config.block_out_channels))
         self.image_processor = VaeImageProcessor(vae_scale_factor=self.vae_scale_factor)
         self.device = "cuda"
         self.pipeline.to(self.device)
-        self.torch_dtype = torch_dtype
-        os.makedirs(save_dir, exist_ok=True)
+        self.torch_dtype = config.torch_dtype
+        os.makedirs(self.save_dir, exist_ok=True)
 
     @torch.no_grad()
     def __call__(self, image: Image.Image, prompt: str, filename: str):
@@ -74,7 +57,6 @@ class CacheFlux:
             generator=None,
             latents=None,
         )
-        print(noise_latents.shape)
         latents = self.image_processor.preprocess(
             image,
         )
@@ -86,7 +68,6 @@ class CacheFlux:
 
         height = 2 * (int(height) // self.vae_scale_factor)
         width = 2 * (int(width) // self.vae_scale_factor)
-        print(height, width)
         packed_latents = self.pipeline._pack_latents(
             latents,
             batch_size=latents.shape[0],
@@ -125,6 +106,50 @@ class CacheFlux:
         image = self.image_processor.postprocess(image, output_type="pil")
         return image[0]
 
+    @staticmethod
+    def calculate_shift(
+        image_seq_len,
+        base_seq_len: int = 256,
+        max_seq_len: int = 4096,
+        base_shift: float = 0.5,
+        max_shift: float = 1.16,
+    ):
+        m = (max_shift - base_shift) / (max_seq_len - base_seq_len)
+        b = base_shift - m * base_seq_len
+        mu = image_seq_len * m + b
+        return mu
+
+    @staticmethod
+    def time_shift(mu: float, sigma: float, t: torch.Tensor):
+        return math.exp(mu) / (math.exp(mu) + (1 / t - 1) ** sigma)
+
+    @staticmethod
+    def get_args(parser):
+        parser.add_argument(
+            "--cache_flux.cache_dir",
+            default="data/cache",
+            type=str,
+            help="Cache directory",
+        )
+        parser.add_argument(
+            "--cache_flux.pretrained_path",
+            default="black-forest-labs/FLUX.1-dev",
+            type=str,
+            help="Pretrained path",
+        )
+        parser.add_argument(
+            "--cache_flux.torch_dtype",
+            default="torch.float32",
+            type=str,
+            help="Torch dtype",
+        )
+        parser.add_argument(
+            "--cache_flux.guidance_scale",
+            default=3.5,
+            type=float,
+            help="Guidance scale",
+        )
+
 
 if __name__ == "__main__":
     from data.core_data import CoreCachedDataset
@@ -151,91 +176,3 @@ if __name__ == "__main__":
         "--save_debug_image_noised", default="debug/image_noised.jpg", type=str
     )
     args = parser.parse_args()
-
-    with torch.no_grad():
-        print("Debugging cache flux")
-        cache_flux = CacheFlux(save_dir=args.cache_dir)
-        dataset = CoreDataset(
-            root_folder=args.dataset_root,
-            metadata_file=args.metadata_file,
-        )
-        image, caption = dataset[0]
-
-        width, height = image.size
-
-        image.save(args.save_debug_image)
-        cache_flux(
-            image,
-            caption,
-            filename="debug",
-        )
-        feeds = torch.load(os.path.join(args.cache_dir, "debug.pt"))
-        vae_output = feeds["vae_latents"]
-        print(vae_output.shape)
-
-        print("Debugging cache flux decode")
-        image = cache_flux.decode_from_latent(feeds["latents"], width, height)
-        image.save(args.save_debug_image_reconstructed)
-
-        cached_dataset = CoreCachedDataset(cached_folder=args.cache_dir)
-        noised_latent = cached_dataset.get_noised_latent(0, 0.5)
-        image = cache_flux.decode_from_latent(noised_latent, width=width, height=height)
-        image.save(args.save_debug_image_noised)
-
-        print("Debugging transformer denoise")
-        transformer = diffusers.FluxTransformer2DModel.from_pretrained(
-            "black-forest-labs/FLUX.1-dev",
-            subfolder="transformer",
-            torch_dtype=torch.bfloat16,
-        )
-        transformer.to("cuda")
-
-        num_inferece_steps = 30
-        dt = 1 / num_inferece_steps
-        denoise_images = []
-        noised_latent = noised_latent.cuda()
-        # noised_latent = torch.randn_like(noised_latent).cuda()
-
-        sigmas = torch.linspace(0, 1, num_inferece_steps)
-        mu = calculate_shift(noised_latent.shape[1])
-        print("mu", mu)
-        sigmas = time_shift(mu, 1.0, sigmas)
-        sigmas = sigmas.flip(0)
-        print("sigmas", sigmas)
-        print("sigmas shape", sigmas.shape)
-
-        # reverse the sigmas
-
-        for i in range(num_inferece_steps - 1):
-            print("Denoising step", i)
-            with torch.amp.autocast(device_type="cuda", dtype=torch.bfloat16):
-                noise_pred = transformer(
-                    hidden_states=noised_latent,
-                    timestep=sigmas[i].expand(1).cuda(),
-                    pooled_projections=feeds["pooled_prompt_embeds"].cuda(),
-                    encoder_hidden_states=feeds["prompt_embeds"].cuda(),
-                    txt_ids=feeds["text_ids"].cuda(),
-                    img_ids=feeds["latent_image_ids"].cuda(),
-                    joint_attention_kwargs=None,
-                    guidance=feeds["guidance"].cuda(),
-                    return_dict=False,
-                )[0]
-
-            noised_latent = noised_latent + (sigmas[i + 1] - sigmas[i]) * noise_pred
-            image = cache_flux.decode_from_latent(
-                noised_latent, width=width, height=height
-            )
-            denoise_images.append(image)
-
-        # save denoise images as gif
-        denoise_images[0].save(
-            "debug/denoise.gif",
-            save_all=True,
-            append_images=denoise_images[1:],
-            duration=100,
-            loop=0,
-        )
-
-        for i, (image, caption) in enumerate(dataset):
-            cache_flux(image, caption, filename=f"image_{i}")
-        print("Done")

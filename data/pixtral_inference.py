@@ -11,12 +11,12 @@ from huggingface_hub import snapshot_download
 from pathlib import Path
 
 
-class MistralInference:
-    def __init__(self, model_repo="mistral-community/pixtral-12b-240910"):
+class PixtralInference:
+    def __init__(self, config):
         self.mistral_models_path = Path.home().joinpath("mistral_models", "Pixtral")
         self.mistral_models_path.mkdir(parents=True, exist_ok=True)
 
-        self._download_model(model_repo)
+        self._download_model(config.model_repo)
         self.tokenizer = MistralTokenizer.from_file(
             f"{self.mistral_models_path}/tekken.json"
         )
@@ -51,6 +51,39 @@ class MistralInference:
         result = self.tokenizer.decode(out_tokens[0])
         return result
 
+    @staticmethod
+    def get_args(parser):
+        parser.add_argument(
+            "--pixtral_inference.model_repo",
+            type=str,
+            default="mistral-community/pixtral-12b-240910",
+            help="Model repository",
+        )
+        parser.add_argument(
+            "--pixtral_inference.max_tokens",
+            type=int,
+            default=256,
+            help="Max tokens",
+        )
+        parser.add_argument(
+            "--pixtral_inference.temperature",
+            type=float,
+            default=0.35,
+            help="Temperature",
+        )
+        parser.add_argument(
+            "--pixtral_inference.trigger",
+            type=str,
+            default="OHNX",
+            help="Trigger",
+        )
+        parser.add_argument(
+            "--pixtral_inference.caption_type",
+            choices=["short", "long"],
+            default="short",
+            help="Caption type",
+        )
+
 
 if __name__ == "__main__":
     import argparse
@@ -64,29 +97,3 @@ if __name__ == "__main__":
     parser.add_argument("--caption-type", choices=["short", "long"], default="short")
     parser.add_argument("--trigger", type=str, default="OHNX tshirt")
     args = parser.parse_args()
-
-    image_files = glob.glob(f"{args.root_folder}/images/*.jpg")
-
-    mistral_inference = MistralInference()
-    prompts = {
-        "short": "Describe the image as a short caption",
-        "long": "Describe the image",
-    }
-
-    prompt = prompts[args.caption_type]
-    metadata = []
-    for image_file in tqdm(image_files):
-        try:
-            image = Image.open(image_file)
-            image = image.convert("RGB")
-        except Exception as e:
-            print(f"Error processing {image_file}: {e}")
-            continue
-        caption = mistral_inference.infer(
-            prompt=prompt, image=image, max_tokens=256, temperature=0.35
-        )
-        caption = args.trigger + ". " + caption
-        metadata.append({"image": image_file.split("/")[-1], "caption": caption})
-
-        with open(f"{args.root_folder}/metadata.json", "w") as f:
-            json.dump(metadata, f, indent=4)

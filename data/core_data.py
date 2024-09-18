@@ -24,10 +24,10 @@ def calculate_shift(
 
 
 class CoreDataset(Dataset):
-    def __init__(self, metadata_file: str, root_folder: str):
-        with open(metadata_file, "r") as f:
+    def __init__(self, config):
+        with open(config.metadata_file, "r") as f:
             self.metadata = json.load(f)
-        self.root_folder = root_folder
+        self.root_folder = config.root_folder
         self.bucket_config = self._init_bucket()
 
     def _init_bucket(
@@ -83,11 +83,22 @@ class CoreDataset(Dataset):
         image = image.resize(bucket_size)
         return image, caption
 
+    @staticmethod
+    def get_args(parser):
+        parser.add_argument(
+            "--core_dataset.dataset_root", type=str, default="dataset/tshirt/images"
+        )
+        parser.add_argument(
+            "--core_dataset.metadata_file",
+            type=str,
+            default="dataset/tshirt/metadata.json",
+        )
+
 
 class CoreCachedDataset(Dataset):
-    def __init__(self, cached_folder: str, max_len: int = 512):
-        self.cached_files = glob.glob(f"{cached_folder}/*.pt")
-        self.max_len = max_len
+    def __init__(self, config):
+        self.cached_files = glob.glob(f"{config.cached_folder}/*.pt")
+        self.max_len = config.max_len
         self.max_step = 1000
         self.pipeline = diffusers.FluxPipeline.from_pretrained(
             "black-forest-labs/FLUX.1-dev",
@@ -99,17 +110,10 @@ class CoreCachedDataset(Dataset):
     def __len__(self):
         return len(self.cached_files)
 
-    def add_noise(self, latent: torch.Tensor, dtype: torch.dtype):
-        if random.random() < 0.25:
-            timestep = random.randint(250, self.max_step)
-        else:
-            timestep = random.randint(1, 250)
+    def add_noise(self, latent: torch.Tensor):
+        timestep = random.randint(1, 250)
         sigma = timestep / self.max_step
-        # mu = calculate_shift((latent.shape[2] * latent.shape[3]))
-        # sigma = torch.randn(1).sigmoid().item()
-        # shift = math.exp(mu)
-        # sigma = (sigma * shift) / (1 + (shift - 1) * sigma)
-        noise = torch.randn_like(latent).to(dtype)
+        noise = torch.randn_like(latent).to(latent.dtype)
         noised_latent = (1 - sigma) * latent + sigma * noise
         return noised_latent, sigma, noise
 
@@ -151,6 +155,21 @@ class CoreCachedDataset(Dataset):
         noise = torch.randn_like(latent).to(dtype)
         noised_latent = (1 - sigma) * latent + sigma * noise
         return noised_latent
+
+    @staticmethod
+    def get_args(parser):
+        parser.add_argument(
+            "--core_cached_dataset.cached_folder",
+            type=str,
+            default="data/cache",
+            help="Cached folder",
+        )
+        parser.add_argument(
+            "--core_cached_dataset.max_len",
+            type=int,
+            default=512,
+            help="Max sequence length",
+        )
 
 
 def collate_fn(batch):

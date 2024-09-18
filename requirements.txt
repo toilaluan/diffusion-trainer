@@ -1,6 +1,6 @@
 lightning
 transformers
-diffusers
+diffusers==0.30.3
 hf_transfer
 sentencepiece
 protobuf
@@ -13,5 +13,6 @@ prodigyopt
 huggingface_hub==0.22.2
 Pillow
 pathlib
+wandb
 mistral_inference
 mistral_common

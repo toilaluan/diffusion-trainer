@@ -2,7 +2,7 @@
 
 
 from lightning_modules.lightning_flux import FluxLightning
-from data.cache_data import CacheFlux
+from data.cache_flux import CacheFlux
 from data.core_data import CoreDataset, CoreCachedDataset, collate_fn
 from torch.utils.data import DataLoader
 from tqdm import tqdm

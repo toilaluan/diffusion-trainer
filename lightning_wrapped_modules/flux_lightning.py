@@ -1,57 +1,51 @@
 import pytorch_lightning as L
 import diffusers
 import torch
-import schedulefree
 from peft import LoraConfig, set_peft_model_state_dict
 from peft.utils import get_peft_model_state_dict
-import math
 from optimum.quanto import freeze, qfloat8, quantize, qint4
-import bitsandbytes as bnb
-import gc
 import wandb
 from prodigyopt import Prodigy
-
-
-def flush():
-    gc.collect()
-    torch.cuda.empty_cache()
-    torch.cuda.reset_max_memory_allocated()
-    torch.cuda.reset_peak_memory_stats()
 
 
 class FluxLightning(L.LightningModule):
     def __init__(
         self,
-        denoiser_pretrained_path: str,
-        learning_rate: float = 1e-4,
-        weight_decay: float = 1e-4,
-        torch_dtype: torch.dtype = torch.bfloat16,
+        model_config=None,
+        optimizer_config=None,
     ):
         super().__init__()
-        self.learning_rate = learning_rate
-        self.weight_decay = weight_decay
-        self.torch_dtype = torch_dtype
+        self.model_config = model_config
+        self.optimizer_config = optimizer_config
+        self.learning_rate = optimizer_config.lr
+        self.weight_decay = optimizer_config.weight_decay
+        self.torch_dtype = torch.bfloat16
         self.denoiser = diffusers.FluxTransformer2DModel.from_pretrained(
-            denoiser_pretrained_path,
+            "black-forest-labs/FLUX.1-dev",
             subfolder="transformer",
-            torch_dtype=torch_dtype,
+            torch_dtype=self.torch_dtype,
         )
-        self.denoiser.to("cuda")
-        # quantize(self.denoiser, weights=qfloat8)
-        # freeze(self.denoiser)
-        # flush()
-        self.apply_lora()
+        if model_config.quanto == "qint4":
+            quantize(self.denoiser, weights=qint4)
+            freeze(self.denoiser)
+        elif model_config.quanto == "qfloat8":
+            quantize(self.denoiser, weights=qfloat8)
+            freeze(self.denoiser)
+        else:
+            pass
+        self.apply_lora(model_config.lora_rank, model_config.lora_alpha)
         self.denoiser.enable_gradient_checkpointing()
         self.denoiser.train()
         self.print_trainable_parameters(self.denoiser)
-        self.latest_lora_path = None
         self.pipeline = diffusers.FluxPipeline.from_pretrained(
             "black-forest-labs/FLUX.1-dev",
             torch_dtype=self.torch_dtype,
             transformer=self.denoiser,
             text_encoder=None,
             text_encoder_2=None,
-        ).to("cuda")
+        )
+        self.save_lora_every_n_epoch = 1
+        self.save_hyperparameters()
 
     @staticmethod
     def print_trainable_parameters(model):
@@ -68,10 +62,10 @@ class FluxLightning(L.LightningModule):
             f"trainable params: {trainable_params} || all params: {all_param} || trainable%: {100 * trainable_params / all_param}"
         )
 
-    def apply_lora(self):
+    def apply_lora(self, r, lora_alpha):
         transformer_lora_config = LoraConfig(
-            r=16,
-            lora_alpha=16,
+            r=r,
+            lora_alpha=lora_alpha,
             init_lora_weights="gaussian",
             target_modules=["to_k", "to_q", "to_v", "to_out.0."],
         )
@@ -122,10 +116,10 @@ class FluxLightning(L.LightningModule):
         self.log("loss", loss, on_step=True, on_epoch=True, prog_bar=True)
         return loss
 
-    def on_validation_start(self) -> None:
-        super().on_validation_start()
-        if self.current_epoch % 9 == 0:
-            self.save_lora(f"lora_weights_epoch_{self.current_epoch}")
+    def on_train_start(self) -> None:
+        super().on_train_start()
+        if self.current_epoch % self.save_lora_every_n_epoch == 0:
+            self.save_lora(f"checkpoints/lora_epoch-{self.current_epoch}")
 
     def validation_step(self, batch, batch_idx):
         feeds, targets, metadata = batch
@@ -153,23 +147,41 @@ class FluxLightning(L.LightningModule):
             save_directory=path,
             transformer_lora_layers=transformer_lora_layers,
         )
-        self.latest_lora_path = path
 
     def configure_optimizers(self):
         params_to_optimize = list(
             filter(lambda p: p.requires_grad, self.denoiser.parameters())
         )
-        # optimizer = torch.optim.AdamW(
-        #     params_to_optimize,
-        #     lr=self.learning_rate,
-        #     weight_decay=self.weight_decay,
-        # )
-        optimizer = Prodigy(
-            params_to_optimize,
-            lr=1.0,
-            weight_decay=self.weight_decay,
-            decouple=True,
-            d_coef=0.8,
-            use_bias_correction=True,
-        )
+        if self.optimizer_config.type == "adamw":
+            optimizer = torch.optim.AdamW(
+                params_to_optimize,
+                lr=self.optimizer_config.lr,
+                weight_decay=self.weight_decay,
+            )
+        elif self.optimizer_config.type == "prodigy":
+            optimizer = Prodigy(
+                params_to_optimize,
+                lr=1.0,
+                weight_decay=self.optimizer_config.weight_decay,
+                decouple=True,
+                d_coef=0.8,
+                use_bias_correction=True,
+            )
         return optimizer
+
+    @staticmethod
+    def get_optimizer_args(parser):
+        parser.add_argument("--optimizer.weight_decay", type=float, default=0.0001)
+        parser.add_argument("--optimizer.lr", type=float, default=0.0001)
+        parser.add_argument("--optimizer.type", type=str, default="adamw")
+
+    @staticmethod
+    def get_model_args(parser):
+        parser.add_argument("--model.lora_rank", type=int, default=16)
+        parser.add_argument("--model.lora_alpha", type=int, default=16)
+        parser.add_argument("--model.quanto", type=str, default="")
+
+    @staticmethod
+    def get_args(parser):
+        FluxLightning.get_model_args(parser)
+        FluxLightning.get_optimizer_args(parser)

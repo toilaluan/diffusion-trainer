@@ -1,90 +1,15 @@
-from lightning_modules.lightning_flux import FluxLightning
-from data.core_data import CoreCachedDataset, collate_fn
-import torch
-import pytorch_lightning as pl
-import os
-import argparse
-from lightning.pytorch.loggers import WandbLogger
-from pytorch_lightning.callbacks import Callback, ModelCheckpoint, LearningRateMonitor
+from lightning_wrapped_modules.flux_lightning import FluxLightning
+from trainer.pl_trainer import Trainer
+from utilities.get_config import get_config
 
+if __name__ == "__main__":
 
-class MyPrintingCallback(Callback):
-    def on_train_start(self, trainer, pl_module):
-        print("Training is starting")
+    config = get_config()
 
-    def on_train_end(self, trainer, pl_module):
-        print("Training is ending")
+    print(config)
 
+    model = FluxLightning(config.model, config.optimizer)
 
-callbacks = [
-    MyPrintingCallback(),
-    LearningRateMonitor("step"),
-]
+    trainer = Trainer(config.training)
 
-
-def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Script to run training with various options."
-    )
-
-    parser.add_argument("--project", default="finetune-flux", help="Wandb project name")
-    parser.add_argument("--batch_size", type=int, default=1, help="Batch size")
-    parser.add_argument("--max_epochs", type=int, default=20, help="Max epochs")
-    parser.add_argument(
-        "--val_check_interval",
-        type=float,
-        default=0.9,
-        help="Validation check interval",
-    )
-    parser.add_argument(
-        "--log_every_n_steps", type=int, default=1, help="Log every n steps"
-    )
-    parser.add_argument("--gpus", type=int, default=1, help="Number of GPUs")
-    parser.add_argument("--precision", default="bf16", help="Precision")
-    parser.add_argument("--accelerator", default="gpu", help="Accelerator")
-    parser.add_argument(
-        "--accumulate_grad_batches", type=int, default=1, help="Accumulate grad batches"
-    )
-    parser.add_argument("--strategy", default="auto", help="Strategy")
-    parser.add_argument("--devices", default=1)
-    parser.add_argument("--check_val_every_n_epoch", default=1, type=int)
-    parser.add_argument("--cache_dir", default="debug/cache_tshirt", type=str)
-
-    return parser.parse_args()
-
-
-args = parse_args()
-
-wandb_logger = WandbLogger(project="flux-lora")
-
-model = FluxLightning(
-    denoiser_pretrained_path="black-forest-labs/FLUX.1-dev",
-    learning_rate=1e-4,
-    weight_decay=1e-8,
-)
-model.to("cuda")
-
-cached_dataset = CoreCachedDataset(cached_folder=args.cache_dir)
-
-train_dataloader = torch.utils.data.DataLoader(
-    cached_dataset, batch_size=args.batch_size, shuffle=True, collate_fn=collate_fn
-)
-val_dataloader = torch.utils.data.DataLoader(
-    cached_dataset, batch_size=args.batch_size, shuffle=False, collate_fn=collate_fn
-)
-
-trainer = pl.Trainer(
-    accelerator=args.accelerator,
-    accumulate_grad_batches=args.accumulate_grad_batches,
-    precision=args.precision,
-    callbacks=callbacks,
-    max_epochs=args.max_epochs,
-    log_every_n_steps=args.log_every_n_steps,
-    check_val_every_n_epoch=args.check_val_every_n_epoch,
-    logger=wandb_logger,
-    strategy=args.strategy,
-    devices=args.devices,
-    limit_val_batches=3,
-)
-
-trainer.fit(model, train_dataloader, val_dataloader)
+    trainer.fit(model)
