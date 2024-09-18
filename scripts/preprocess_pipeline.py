@@ -90,7 +90,7 @@ class PreprocessPipeline:
         with torch.no_grad():
             if self.config.preprocess_pipeline.debug:
                 print("Debugging cache flux")
-                os.mkdir("debug", exist_ok=True)
+                os.makedirs("debug", exist_ok=True)
                 image, caption = self.core_dataset[0]
 
                 width, height = image.size
