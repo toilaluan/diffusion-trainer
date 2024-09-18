@@ -113,6 +113,9 @@ class PreprocessPipeline:
                     feeds["latents"], width, height
                 )
                 image.save("debug/encode_then_decode_image.jpg")
+                os.remove(
+                    os.path.join(self.config.cache_flux.cache_dir, "cached_image.pt")
+                )
 
                 noised_latent = self.core_cached_dataset.get_noised_latent(0, 0.5)
                 image = self.cache_flux.decode_from_latent(
