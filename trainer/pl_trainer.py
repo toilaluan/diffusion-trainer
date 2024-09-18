@@ -8,8 +8,16 @@ class FluxTrainer(pl.Trainer):
     def __init__(self, config, **kwargs):
         super().__init__(
             logger=WandbLogger(project=config.project),
-            **config,
-            **kwargs,
+            max_epochs=config.max_epochs,
+            log_every_n_steps=config.log_every_n_steps,
+            gpus=config.gpus,
+            precision=config.precision,
+            accelerator=config.accelerator,
+            accumulate_grad_batches=config.accumulate_grad_batches,
+            strategy=config.strategy,
+            devices=config.devices,
+            check_val_every_n_epoch=config.check_val_every_n_epoch,
+            limit_val_batches=config.limit_val_batches,
         )
         self.cached_dataset = CoreCachedDataset(cached_folder=config.cache_dir)
         self.train_dataloader = torch.utils.data.DataLoader(
