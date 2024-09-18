@@ -1,6 +1,6 @@
-from lightning_wrapped_modules.flux_lightning import FluxLightning
-from trainer.pl_trainer import Trainer
 from utilities.get_config import get_config
+from lightning_wrapped_modules import FluxLightning
+from trainer import FluxTrainer
 
 if __name__ == "__main__":
 
@@ -10,6 +10,6 @@ if __name__ == "__main__":
 
     model = FluxLightning(config.model, config.optimizer)
 
-    trainer = Trainer(config.training)
+    trainer = FluxTrainer(config.training)
 
     trainer.fit(model)

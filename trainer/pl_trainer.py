@@ -4,7 +4,7 @@ from data.core_data import CoreCachedDataset, collate_fn
 import torch
 
 
-class Trainer(pl.Trainer):
+class FluxTrainer(pl.Trainer):
     def __init__(self, config, **kwargs):
         super().__init__(
             logger=WandbLogger(project=config.project),
