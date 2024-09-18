@@ -8,7 +8,6 @@ import torch
 import os
 import diffusers
 import argparse
-import math
 
 
 class PreprocessPipeline:

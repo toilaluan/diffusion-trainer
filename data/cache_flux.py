@@ -8,6 +8,7 @@ import os
 from diffusers.image_processor import VaeImageProcessor
 from utilities.dotable_config import Config
 import argparse
+import math
 
 
 class CacheFlux:
