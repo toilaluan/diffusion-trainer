@@ -31,6 +31,7 @@ class FluxTrainer(pl.Trainer):
             shuffle=False,
             collate_fn=collate_fn,
         )
+        self.train_config = train_config
 
     def fit(self, model):
         model.save_lora_every_n_epoch = self.train_config.save_lora_every_n_epoch
