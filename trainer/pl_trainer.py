@@ -19,13 +19,13 @@ class FluxTrainer(pl.Trainer):
             limit_val_batches=train_config.limit_val_batches,
         )
         self.cached_dataset = CoreCachedDataset(dataset_config)
-        self.train_dataloader = torch.utils.data.DataLoader(
+        self._train_dataloader = torch.utils.data.DataLoader(
             self.cached_dataset,
             batch_size=train_config.batch_size,
             shuffle=True,
             collate_fn=collate_fn,
         )
-        self.val_dataloader = torch.utils.data.DataLoader(
+        self._val_dataloader = torch.utils.data.DataLoader(
             self.cached_dataset,
             batch_size=train_config.batch_size,
             shuffle=False,
@@ -34,7 +34,7 @@ class FluxTrainer(pl.Trainer):
 
     def fit(self, model):
         model.save_lora_every_n_epoch = self.config.save_lora_every_n_epoch
-        super().fit(model, self.train_dataloader, self.val_dataloader)
+        super().fit(model, self._train_dataloader, self._val_dataloader)
 
     @staticmethod
     def get_args(parser):
