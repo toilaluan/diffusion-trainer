@@ -20,7 +20,6 @@ class Config(DefaultMunch):
         default: Optional[Any] = None,
     ) -> None:
         super().__init__(default)
-        self["__is_set"] = {}
 
         if parser is None:
             return
