@@ -92,7 +92,7 @@ class FluxTrainer(pl.Trainer):
         parser.add_argument("--training.devices", default=1)
         parser.add_argument(
             "--training.check_val_every_n_epoch",
-            default=1,
+            default=10,
             type=int,
         )
         parser.add_argument(
@@ -107,6 +107,6 @@ class FluxTrainer(pl.Trainer):
         )
         parser.add_argument(
             "--training.save_lora_every_n_epoch",
-            default=1,
+            default=5,
             type=int,
         )
