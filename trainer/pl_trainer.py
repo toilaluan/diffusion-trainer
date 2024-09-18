@@ -10,7 +10,6 @@ class FluxTrainer(pl.Trainer):
             logger=WandbLogger(project=config.project),
             max_epochs=config.max_epochs,
             log_every_n_steps=config.log_every_n_steps,
-            gpus=config.gpus,
             precision=config.precision,
             accelerator=config.accelerator,
             accumulate_grad_batches=config.accumulate_grad_batches,
