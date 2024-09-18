@@ -130,7 +130,7 @@ class CacheFlux:
     def get_args(parser):
         parser.add_argument(
             "--cache_flux.cache_dir",
-            default="data/cache",
+            default="debug",
             type=str,
             help="Cache directory",
         )
