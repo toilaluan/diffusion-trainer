@@ -25,14 +25,18 @@ class FluxLightning(L.LightningModule):
             subfolder="transformer",
             torch_dtype=self.torch_dtype,
         )
-        if model_config.quanto == "qint4":
+        if not model_config.quanto:
+            pass
+        elif model_config.quanto == "qint4":
+            print("Quantizing model to qint4")
             quantize(self.denoiser, weights=qint4)
             freeze(self.denoiser)
         elif model_config.quanto == "qfloat8":
+            print("Quantizing model to qfloat8")
             quantize(self.denoiser, weights=qfloat8)
             freeze(self.denoiser)
         else:
-            pass
+            raise ValueError(f"Unknown quantization method {model_config.quanto}")
         self.apply_lora(model_config.lora_rank, model_config.lora_alpha)
         self.denoiser.enable_gradient_checkpointing()
         self.denoiser.train()
@@ -171,9 +175,9 @@ class FluxLightning(L.LightningModule):
 
     @staticmethod
     def get_optimizer_args(parser):
-        parser.add_argument("--optimizer.weight_decay", type=float, default=0.0001)
-        parser.add_argument("--optimizer.lr", type=float, default=0.0001)
-        parser.add_argument("--optimizer.type", type=str, default="adamw")
+        parser.add_argument("--optimizer.weight_decay", type=float, default=0.1)
+        parser.add_argument("--optimizer.lr", type=float, default=1.0)
+        parser.add_argument("--optimizer.type", type=str, default="prodigy")
 
     @staticmethod
     def get_model_args(parser):

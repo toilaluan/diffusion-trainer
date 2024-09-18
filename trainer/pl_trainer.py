@@ -31,7 +31,6 @@ class Trainer(pl.Trainer):
 
     @staticmethod
     def get_args(parser):
-        parser.add_argument("--training.num_epochs", type=int, default=100)
         parser.add_argument(
             "--training.project",
             default="finetune-flux",
@@ -46,7 +45,7 @@ class Trainer(pl.Trainer):
         parser.add_argument(
             "--training.max_epochs",
             type=int,
-            default=20,
+            default=100,
             help="Max epochs",
         )
         parser.add_argument(

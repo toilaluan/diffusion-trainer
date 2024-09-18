@@ -96,7 +96,7 @@ class CoreDataset(Dataset):
 
 class CoreCachedDataset(Dataset):
     def __init__(self, config):
-        self.cached_files = glob.glob(f"{config.cached_folder}/*.pt")
+        self.cached_files = glob.glob(f"{config.cache_dir}/*.pt")
         self.max_len = config.max_len
         self.max_step = 1000
         self.pipeline = diffusers.FluxPipeline.from_pretrained(
@@ -158,9 +158,9 @@ class CoreCachedDataset(Dataset):
     @staticmethod
     def get_args(parser):
         parser.add_argument(
-            "--core_cached_dataset.cached_folder",
+            "--core_cached_dataset.cache_dir",
             type=str,
-            default="data/cache",
+            default="cache/tshirt",
             help="Cached folder",
         )
         parser.add_argument(
