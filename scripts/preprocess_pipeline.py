@@ -146,7 +146,6 @@ class PreprocessPipeline:
                     desc="Debugging denoising from cached image",
                 )
                 for i in range(num_inferece_steps - 1):
-                    print("Denoising step", i)
                     with torch.amp.autocast(device_type="cuda", dtype=torch.bfloat16):
                         noise_pred = transformer(
                             hidden_states=noised_latent,
