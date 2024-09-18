@@ -33,7 +33,7 @@ class FluxTrainer(pl.Trainer):
         )
 
     def fit(self, model):
-        model.save_lora_every_n_epoch = self.config.save_lora_every_n_epoch
+        model.save_lora_every_n_epoch = self.train_config.save_lora_every_n_epoch
         super().fit(model, self._train_dataloader, self._val_dataloader)
 
     @staticmethod
