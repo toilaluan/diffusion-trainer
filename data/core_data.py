@@ -86,7 +86,7 @@ class CoreDataset(Dataset):
     @staticmethod
     def get_args(parser):
         parser.add_argument(
-            "--core_dataset.dataset_root", type=str, default="dataset/tshirt/images"
+            "--core_dataset.root_folder", type=str, default="dataset/tshirt/images"
         )
         parser.add_argument(
             "--core_dataset.metadata_file",
