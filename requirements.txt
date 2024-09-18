@@ -10,7 +10,7 @@ peft
 optimum-quanto
 bitsandbytes
 prodigyopt
-huggingface_hub==0.22.2
+huggingface_hub
 Pillow
 pathlib
 wandb
