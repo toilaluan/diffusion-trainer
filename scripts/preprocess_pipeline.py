@@ -38,12 +38,14 @@ class PreprocessPipeline:
             default=False,
             type=bool,
             help="Whether to do captioning and create metadata file",
+            action="store_true",
         )
         parser.add_argument(
             "--preprocess_pipeline.debug",
             default=False,
             type=bool,
             help="Whether to do cache flux",
+            action="store_true",
         )
 
         config = Config(parser=parser)
