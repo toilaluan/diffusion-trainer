@@ -1,4 +1,4 @@
-from data import CoreDataset, collate_fn, CoreCachedDataset, CacheFlux, PixtralInference
+from data import CoreDataset, CoreCachedDataset, CacheFlux, PixtralInference
 from utilities import Config
 import glob
 from PIL import Image
@@ -8,6 +8,7 @@ import torch
 import os
 import diffusers
 import argparse
+import math
 
 
 class PreprocessPipeline:
@@ -102,10 +103,11 @@ class PreprocessPipeline:
                     filename="cached_image",
                 )
                 feeds = torch.load(
-                    os.path.join(self.config.cache_flux.cache_dir, "cached_image.pt")
+                    os.path.join(self.config.cache_flux.cache_dir, "cached_image.pt"),
+                    weights_only=True,
                 )
                 vae_output = feeds["vae_latents"]
-                print(vae_output.shape)
+                print("VAE shape", vae_output.shape)
 
                 print("Debugging cache flux decode")
                 image = self.cache_flux.decode_from_latent(
