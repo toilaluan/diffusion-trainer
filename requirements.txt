@@ -14,5 +14,6 @@ huggingface_hub
 Pillow
 pathlib
 wandb
+munch
 mistral_inference
 mistral_common
