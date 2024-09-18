@@ -88,7 +88,7 @@ class PreprocessPipeline:
                     json.dump(metadata, f, indent=4)
 
         with torch.no_grad():
-            if self.config.preprocess_pipeline.debug_cache_flux:
+            if self.config.preprocess_pipeline.debug:
                 print("Debugging cache flux")
                 os.mkdir("debug")
                 image, caption = self.core_dataset[0]
@@ -189,5 +189,6 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     config = PreprocessPipeline.get_args(parser)
+    print(config)
     pipeline = PreprocessPipeline(config)
     pipeline.start()
