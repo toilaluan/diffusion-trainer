@@ -102,7 +102,7 @@ class PreprocessPipeline:
                     filename="cached_image",
                 )
                 feeds = torch.load(
-                    os.path.join(self.config.cache_flux.cache_dir, "debug.pt")
+                    os.path.join(self.config.cache_flux.cache_dir, "cached_image.pt")
                 )
                 vae_output = feeds["vae_latents"]
                 print(vae_output.shape)
