@@ -31,7 +31,7 @@ class CacheFlux:
         self.image_processor = VaeImageProcessor(vae_scale_factor=self.vae_scale_factor)
         self.device = "cuda"
         self.pipeline.to(self.device)
-        self.torch_dtype = config.torch_dtype
+        self.torch_dtype = eval(str(config.torch_dtype))
         os.makedirs(self.save_dir, exist_ok=True)
 
     @torch.no_grad()
