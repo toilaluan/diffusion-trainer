@@ -19,7 +19,9 @@ class CacheFlux:
         self.guidance_scale = 3.5
         self.pretrained_path = config.pretrained_path
         self.pipeline = diffusers.FluxPipeline.from_pretrained(
-            self.pretrained_path, transformer=None, torch_dtype=config.torch_dtype
+            self.pretrained_path,
+            transformer=None,
+            torch_dtype=eval(str(config.torch_dtype)),
         )
         self.transformer_config = transformers.PretrainedConfig.from_pretrained(
             self.pretrained_path,
