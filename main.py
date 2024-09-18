@@ -9,7 +9,8 @@ if __name__ == "__main__":
     print(config)
 
     model = FluxLightning(config.model, config.optimizer)
-    model.to("cuda")
+    model.denoiser.to("cuda")
+    model.pipeline.to("cuda")
 
     trainer = FluxTrainer(config.training, config.core_cached_dataset)
 
