@@ -19,7 +19,6 @@ class PreprocessPipeline:
         self.core_dataset = CoreDataset(
             config=config.core_dataset,
         )
-        self.core_cached_dataset = CoreCachedDataset(config=config.core_cached_dataset)
         self.cache_flux = CacheFlux(config=config.cache_flux)
         if config.preprocess_pipeline.do_captioning:
             self.pixtral_inference = PixtralInference(config.pixtral_inference)
@@ -113,8 +112,8 @@ class PreprocessPipeline:
                     feeds["latents"], width, height
                 )
                 image.save("debug/encode_then_decode_image.jpg")
-
-                noised_latent = self.core_cached_dataset.get_noised_latent(0, 0.5)
+                core_cached_dataset = CoreCachedDataset(self.config.core_cached_dataset)
+                noised_latent = core_cached_dataset.get_noised_latent(0, 0.5)
                 image = self.cache_flux.decode_from_latent(
                     noised_latent, width=width, height=height
                 )
