@@ -18,7 +18,7 @@ class FluxTrainer(pl.Trainer):
             check_val_every_n_epoch=config.check_val_every_n_epoch,
             limit_val_batches=config.limit_val_batches,
         )
-        self.cached_dataset = CoreCachedDataset(cached_folder=config.cache_dir)
+        self.cached_dataset = CoreCachedDataset(config.core_cached_dataset)
         self.train_dataloader = torch.utils.data.DataLoader(
             self.cached_dataset,
             batch_size=config.batch_size,
