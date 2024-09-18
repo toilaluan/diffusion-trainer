@@ -40,7 +40,7 @@ class PreprocessPipeline:
             help="Whether to do captioning and create metadata file",
         )
         parser.add_argument(
-            "--preprocess_pipeline.debug_cache_flux",
+            "--preprocess_pipeline.debug",
             default=False,
             type=bool,
             help="Whether to do cache flux",
