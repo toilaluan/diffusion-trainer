@@ -182,3 +182,12 @@ class PreprocessPipeline:
                 self.cache_flux(image, caption, filename=f"image_{i}")
                 pbar.update(1)
             pbar.close()
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    config = PreprocessPipeline.get_args(parser)
+    pipeline = PreprocessPipeline(config)
+    pipeline.start()
