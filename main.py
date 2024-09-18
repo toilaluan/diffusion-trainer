@@ -10,6 +10,6 @@ if __name__ == "__main__":
 
     model = FluxLightning(config.model, config.optimizer)
 
-    trainer = FluxTrainer(config.training)
+    trainer = FluxTrainer(config.training, config.core_cached_dataset)
 
     trainer.fit(model)

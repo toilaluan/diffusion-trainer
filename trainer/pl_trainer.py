@@ -5,29 +5,29 @@ import torch
 
 
 class FluxTrainer(pl.Trainer):
-    def __init__(self, config, **kwargs):
+    def __init__(self, train_config, dataset_config, **kwargs):
         super().__init__(
-            logger=WandbLogger(project=config.project),
-            max_epochs=config.max_epochs,
-            log_every_n_steps=config.log_every_n_steps,
-            precision=config.precision,
-            accelerator=config.accelerator,
-            accumulate_grad_batches=config.accumulate_grad_batches,
-            strategy=config.strategy,
-            devices=config.devices,
-            check_val_every_n_epoch=config.check_val_every_n_epoch,
-            limit_val_batches=config.limit_val_batches,
+            logger=WandbLogger(project=train_config.project),
+            max_epochs=train_config.max_epochs,
+            log_every_n_steps=train_config.log_every_n_steps,
+            precision=train_config.precision,
+            accelerator=train_config.accelerator,
+            accumulate_grad_batches=train_config.accumulate_grad_batches,
+            strategy=train_config.strategy,
+            devices=train_config.devices,
+            check_val_every_n_epoch=train_config.check_val_every_n_epoch,
+            limit_val_batches=train_config.limit_val_batches,
         )
-        self.cached_dataset = CoreCachedDataset(config.core_cached_dataset)
+        self.cached_dataset = CoreCachedDataset(dataset_config)
         self.train_dataloader = torch.utils.data.DataLoader(
             self.cached_dataset,
-            batch_size=config.batch_size,
+            batch_size=train_config.batch_size,
             shuffle=True,
             collate_fn=collate_fn,
         )
         self.val_dataloader = torch.utils.data.DataLoader(
             self.cached_dataset,
-            batch_size=config.batch_size,
+            batch_size=train_config.batch_size,
             shuffle=False,
             collate_fn=collate_fn,
         )
